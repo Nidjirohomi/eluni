@@ -1,0 +1,136 @@
+{
+  "common": {
+    "appName": "ElUni",
+    "loading": "Загрузка...",
+    "save": "Сохранить",
+    "cancel": "Отмена",
+    "close": "Закрыть",
+    "yes": "Да",
+    "no": "Нет",
+    "all": "Все",
+    "showing": "Показано",
+    "of": "из",
+    "noData": "Нет данных",
+    "error": "Ошибка"
+  },
+  "toolbar": {
+    "myCases": "Мои дела",
+    "myCasesShort": "Дела",
+    "complaints": "Список жалоб",
+    "complaintsShort": "Жалобы",
+    "analytics": "Аналитика",
+    "analyticsShort": "Аналитика",
+    "export": "Экспорт",
+    "settings": "Настройки",
+    "settingsShort": "Настройки",
+    "profile": "Профиль",
+    "profileShort": "Профиль",
+    "startDuty": "Начать смену",
+    "endDuty": "Завершить смену",
+    "logout": "Выйти",
+    "toggleHeatmap": "Тепловая карта",
+    "heatmapShort": "Тепловая"
+  },
+  "status": {
+    "pending": "В ожидании",
+    "in_progress": "В работе",
+    "resolved": "Решено"
+  },
+  "duty": {
+    "on": "На смене",
+    "off": "Не на смене"
+  },
+  "priority": {
+    "label": "Приоритет",
+    "high": "Высокий",
+    "medium": "Средний",
+    "low": "Низкий"
+  },
+  "filters": {
+    "status": "Статус",
+    "category": "Категория",
+    "priority": "Приоритет"
+  },
+  "complaint": {
+    "id": "ID",
+    "category": "Категория",
+    "address": "Адрес",
+    "assignee": "Исполнитель",
+    "createdAt": "Создано",
+    "officialText": "Официальная формулировка",
+    "originalText": "Исходный текст",
+    "takeInWork": "Взять в работу",
+    "assign": "Назначить",
+    "assignTo": "Назначить сотрудника",
+    "close": "Закрыть дело",
+    "noAssignee": "Не назначен",
+    "preview": "Превью"
+  },
+  "settings": {
+    "title": "Настройки",
+    "theme": "Тема",
+    "themeLight": "Светлая",
+    "themeDark": "Тёмная",
+    "language": "Язык",
+    "profile": "Профиль",
+    "role": "Роль",
+    "org": "Орган"
+  },
+  "myCases": {
+    "title": "Мои дела",
+    "empty": "Сейчас на вас нет активных дел.",
+    "subtitle": "Жалобы, над которыми вы работаете"
+  },
+  "complaintList": {
+    "title": "Все жалобы ведомства",
+    "subtitle": "Полная таблица обращений"
+  },
+  "header": {
+    "user": "Пользователь",
+    "shift": "Смена"
+  },
+  "login": {
+    "title": "Кабинет госслужащего",
+    "username": "Логин",
+    "password": "Пароль",
+    "submit": "Войти",
+    "tundukSoon": "Скоро",
+    "tundukButton": "Войти через Түндүк",
+    "testAccounts": "Тестовые аккаунты",
+    "passwordHint": "пароль"
+  },
+  "public": {
+    "title": "Сообщите о городской проблеме",
+    "subtitle": "AI-классификатор автоматически определит категорию, приоритет и направит ваше обращение в нужный государственный орган.",
+    "describe": "Опишите проблему",
+    "location": "Местоположение",
+    "locationHint": "Кликните по карте или начните вводить адрес",
+    "locationPicked": "Точка выбрана",
+    "detectAddress": "Определить адрес",
+    "send": "Отправить",
+    "processing": "Обработка...",
+    "successTitle": "Обращение принято",
+    "successHint": "Сохраните ID, чтобы отслеживать статус.",
+    "warning": "Не используйте персональные данные третьих лиц.",
+    "track": "Отследить",
+    "submitComplaint": "Подать жалобу",
+    "tundukButton": "Войти через Түндүк",
+    "tundukSoon": "Скоро"
+  },
+  "errors": {
+    "network": "Сервис временно недоступен.",
+    "unknown": "Неизвестная ошибка"
+  },
+  "export": {
+    "title": "Экспорт в Excel",
+    "subtitle": "Сформировать отчёт по жалобам вашего органа",
+    "weekly": "За неделю",
+    "monthly": "За месяц",
+    "downloading": "Скачивание...",
+    "download": "Скачать"
+  },
+  "profile": {
+    "title": "Профиль",
+    "subtitle": "Информация о вас и управление сессией"
+  }
+}

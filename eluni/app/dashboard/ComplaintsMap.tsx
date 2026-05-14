@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import "leaflet.heat";
-import type { ComplaintRow } from "./DashboardClient";
+import type { ComplaintRow } from "./types";
+import { useTheme } from "@/lib/theme/ThemeProvider";
 
 // Ленивая инициализация плагина (типы)
 type HeatLatLng = [number, number, number];
@@ -101,9 +102,17 @@ interface Props {
   complaints: ComplaintRow[];
   showHeatmap: boolean;
   org: string;
+  onMarkerClick?: (c: ComplaintRow) => void;
+  height?: string;
 }
 
-export default function ComplaintsMap({ complaints, showHeatmap }: Props) {
+export default function ComplaintsMap({
+  complaints,
+  showHeatmap,
+  onMarkerClick,
+  height,
+}: Props) {
+  const { theme } = useTheme();
   const clusters = useMemo(() => clusterByCoords(complaints), [complaints]);
 
   const heatPoints: HeatLatLng[] = useMemo(
@@ -119,17 +128,27 @@ export default function ComplaintsMap({ complaints, showHeatmap }: Props) {
     [complaints]
   );
 
+  const tileUrl =
+    theme === "dark"
+      ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+      : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png";
+  const bg = theme === "dark" ? "#1E1E1E" : "#FAFAF5";
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-white/5">
+    <div
+      className="overflow-hidden"
+      style={{ width: "100%", height: height ?? "100%" }}
+    >
       <MapContainer
         center={BISHKEK}
         zoom={13}
-        style={{ height: "460px", width: "100%", background: "#0a0a0a" }}
+        style={{ height: "100%", width: "100%", background: bg }}
         scrollWheelZoom
       >
         <TileLayer
+          key={theme}
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          url={tileUrl}
         />
 
         {showHeatmap && <HeatmapLayer points={heatPoints} />}
@@ -144,72 +163,15 @@ export default function ComplaintsMap({ complaints, showHeatmap }: Props) {
               key={cluster.key}
               position={[cluster.lat, cluster.lng]}
               icon={makeIcon(color, cluster.items.length)}
-            >
-              <Popup>
-                <div style={{ minWidth: 220, color: "#111" }}>
-                  {cluster.items.length > 1 && (
-                    <div
-                      style={{
-                        fontSize: 11,
-                        color: "#666",
-                        marginBottom: 6,
-                      }}
-                    >
-                      На этой точке: {cluster.items.length} обращений
-                    </div>
-                  )}
-                  {cluster.items.slice(0, 3).map((c) => (
-                    <div
-                      key={c.id}
-                      style={{
-                        marginBottom: 8,
-                        paddingBottom: 8,
-                        borderBottom: "1px solid #eee",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          gap: 4,
-                          fontSize: 11,
-                          marginBottom: 4,
-                        }}
-                      >
-                        <span
-                          style={{
-                            background: "#eef",
-                            padding: "1px 6px",
-                            borderRadius: 4,
-                          }}
-                        >
-                          {c.category}
-                        </span>
-                        <span
-                          style={{
-                            background: "#fee",
-                            padding: "1px 6px",
-                            borderRadius: 4,
-                          }}
-                        >
-                          {c.priority}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 12 }}>{c.officialText}</div>
-                      <div
-                        style={{ fontSize: 10, color: "#888", marginTop: 4 }}
-                      >
-                        {new Date(c.createdAt).toLocaleString("ru-RU")}
-                      </div>
-                    </div>
-                  ))}
-                  {cluster.items.length > 3 && (
-                    <div style={{ fontSize: 11, color: "#666" }}>
-                      и ещё {cluster.items.length - 3}…
-                    </div>
-                  )}
-                </div>
-              </Popup>
-            </Marker>
+              eventHandlers={{
+                click: () => {
+                  if (onMarkerClick) onMarkerClick(newest);
+                },
+              }}
+              title={`${newest.category} · ${newest.priority}${
+                newest.address ? ` · ${newest.address}` : ""
+              }`}
+            />
           );
         })}
       </MapContainer>

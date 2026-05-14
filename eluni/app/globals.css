@@ -3,13 +3,31 @@
 @tailwind utilities;
 
 :root {
+  color-scheme: light;
+  --bg: #FAFAF5;
+  --surface: #ffffff;
+  --surface-2: #F2F1EA;
+  --border: #E4E1D7;
+  --text: #1F2937;
+  --text-muted: #6B7280;
+  --accent: #4F46E5;
+}
+
+html.dark {
   color-scheme: dark;
+  --bg: #1E1E1E;
+  --surface: #262626;
+  --surface-2: #2E2E2E;
+  --border: #3A3A3A;
+  --text: #E5E5E5;
+  --text-muted: #9CA3AF;
+  --accent: #818CF8;
 }
 
 html,
 body {
-  background: #0a0a0a;
-  color: #f5f5f5;
+  background: var(--bg);
+  color: var(--text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -25,7 +43,8 @@ body {
 }
 
 textarea,
-input {
+input,
+select {
   font-family: inherit;
 }
 
@@ -35,12 +54,38 @@ input {
   height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: var(--bg);
 }
 ::-webkit-scrollbar-thumb {
-  background: #262626;
+  background: var(--border);
   border-radius: 6px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #333;
+  background: var(--text-muted);
+}
+
+/* Утилиты-классы, использующие CSS-переменные темы */
+.bg-app { background: var(--bg); }
+.bg-surface { background: var(--surface); }
+.bg-surface-2 { background: var(--surface-2); }
+.text-app { color: var(--text); }
+.text-muted-app { color: var(--text-muted); }
+.border-app { border-color: var(--border); }
+.accent-app { color: var(--accent); }
+.bg-accent-app { background: var(--accent); }
+
+/* Leaflet popup стили под тему */
+html.dark .leaflet-popup-content-wrapper,
+html.dark .leaflet-popup-tip {
+  background: #262626;
+  color: #e5e5e5;
+}
+
+/* Заметные drawer-анимации */
+.drawer-enter {
+  animation: drawer-slide 0.22s ease-out both;
+}
+@keyframes drawer-slide {
+  from { transform: translateX(-12px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
 }

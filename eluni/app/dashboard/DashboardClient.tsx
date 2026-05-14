@@ -1,34 +1,22 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import {
-  AlertCircle,
-  Loader2,
-  CheckCircle2,
-  Wrench,
-  Clock,
-  UserPlus,
-  MapPin,
-  Flame,
-} from "lucide-react";
+import { Loader2, AlertCircle } from "lucide-react";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { isManager, type Role } from "@/lib/roles";
+import type { ComplaintRow } from "./types";
+import { Toolbar, type ToolbarPanel } from "./Toolbar";
+import { Drawer } from "./Drawer";
+import { ComplaintCard } from "./ComplaintCard";
+import { MyCasesPanel } from "./MyCasesPanel";
+import { ComplaintListPanel } from "./ComplaintListPanel";
+import { SettingsPanel } from "./SettingsPanel";
+import { ProfilePanel } from "./ProfilePanel";
+import { ExportPanel } from "./ExportPanel";
 
-export interface ComplaintRow {
-  id: string;
-  originalText: string;
-  officialText: string;
-  category: string;
-  priority: string;
-  assignedTo: string;
-  assignedUser: string | null;
-  status: string;
-  address: string | null;
-  lat: number | null;
-  lng: number | null;
-  source: string;
-  createdAt: string;
-  updatedAt: string;
-}
+// Re-export для существующих импортов (backward compatibility).
+export type { ComplaintRow } from "./types";
 
 const ComplaintsMap = dynamic(() => import("./ComplaintsMap"), {
   ssr: false,
@@ -40,419 +28,222 @@ const ComplaintsMap = dynamic(() => import("./ComplaintsMap"), {
   ),
 });
 
-const STATUS_LABELS: Record<
-  string,
-  { label: string; className: string; Icon: typeof Clock }
-> = {
-  pending: {
-    label: "В ожидании",
-    className: "bg-amber-500/15 text-amber-400 ring-amber-500/30",
-    Icon: Clock,
-  },
-  in_progress: {
-    label: "В работе",
-    className: "bg-indigo-500/15 text-indigo-400 ring-indigo-500/30",
-    Icon: Wrench,
-  },
-  resolved: {
-    label: "Решено",
-    className: "bg-emerald-500/15 text-emerald-400 ring-emerald-500/30",
-    Icon: CheckCircle2,
-  },
-};
-
-const PRIORITY_STYLES: Record<string, string> = {
-  Высокий: "bg-red-500/15 text-red-400 ring-1 ring-red-500/30",
-  Средний: "bg-amber-500/15 text-amber-400 ring-1 ring-amber-500/30",
-  Низкий: "bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/30",
-};
-
 interface Props {
   org: string;
-  role: string;
+  role: Role;
   username: string;
+  displayName: string;
   initialComplaints: ComplaintRow[];
+  initialDuty: "on_duty" | "off_duty";
 }
+
+const AnalyticsClient = dynamic(
+  () => import("./analytics/AnalyticsClient").then((m) => m.AnalyticsClient),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-40 items-center justify-center text-muted-app">
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      </div>
+    ),
+  }
+);
 
 export function DashboardClient({
   org,
   role,
   username,
+  displayName,
   initialComplaints,
+  initialDuty,
 }: Props) {
+  const { t } = useI18n();
+
   const [complaints, setComplaints] =
     useState<ComplaintRow[]>(initialComplaints);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [priorityFilter, setPriorityFilter] = useState<string>("all");
+  const [activePanel, setActivePanel] = useState<ToolbarPanel>(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
-  const [assignTarget, setAssignTarget] = useState<string | null>(null);
-  const [assignName, setAssignName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
+  const [selected, setSelected] = useState<ComplaintRow | null>(null);
+  const [duty, setDuty] = useState<"on_duty" | "off_duty">(initialDuty);
+  const [dutyPending, setDutyPending] = useState(false);
+  const [myCases, setMyCases] = useState<ComplaintRow[]>([]);
+  const [globalError, setGlobalError] = useState<string | null>(null);
 
-  const categories = useMemo(() => {
-    const set = new Set<string>();
-    for (const c of complaints) set.add(c.category);
-    return Array.from(set).sort();
-  }, [complaints]);
+  // При открытии «Мои дела» — догружаем актуальный список
+  useEffect(() => {
+    if (activePanel !== "my") return;
+    let cancel = false;
+    fetch("/api/complaints/my")
+      .then((r) => r.json())
+      .then((d) => {
+        if (cancel) return;
+        if (Array.isArray(d)) setMyCases(d);
+      })
+      .catch(() => {});
+    return () => {
+      cancel = true;
+    };
+  }, [activePanel, complaints]);
 
-  const filtered = useMemo(() => {
-    return complaints.filter((c) => {
-      if (statusFilter !== "all" && c.status !== statusFilter) return false;
-      if (categoryFilter !== "all" && c.category !== categoryFilter)
-        return false;
-      if (priorityFilter !== "all" && c.priority !== priorityFilter)
-        return false;
-      return true;
-    });
-  }, [complaints, statusFilter, categoryFilter, priorityFilter]);
+  // Периодический refresh полного списка (раз в 30 сек)
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const res = await fetch("/api/complaints");
+        if (!res.ok) return;
+        const data = (await res.json()) as ComplaintRow[];
+        setComplaints(data);
+      } catch {
+        // молча игнорим
+      }
+    }, 30_000);
+    return () => clearInterval(id);
+  }, []);
 
-  const onMap = useMemo(
-    () => filtered.filter((c) => c.lat !== null && c.lng !== null),
-    [filtered]
-  );
-
-  async function patchComplaint(
-    id: string,
-    body: { status: string; assignedUser?: string | null }
-  ) {
-    setPendingId(id);
-    setError(null);
+  async function toggleDuty() {
+    setDutyPending(true);
+    setGlobalError(null);
     try {
-      const res = await fetch(`/api/complaints/${id}`, {
-        method: "PATCH",
+      const action = duty === "on_duty" ? "end" : "start";
+      const res = await fetch("/api/auth/duty", {
+        method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ action }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error ?? `HTTP ${res.status}`);
-
-      startTransition(() => {
-        setComplaints((prev) =>
-          prev.map((c) =>
-            c.id === id
-              ? {
-                  ...c,
-                  status: data.status,
-                  assignedUser: data.assignedUser ?? null,
-                  updatedAt: data.updatedAt,
-                }
-              : c
-          )
-        );
-      });
+      setDuty(action === "start" ? "on_duty" : "off_duty");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Не удалось обновить.");
+      setGlobalError(err instanceof Error ? err.message : t("errors.unknown"));
     } finally {
-      setPendingId(null);
+      setDutyPending(false);
     }
   }
 
-  function takeInWork(id: string) {
-    void patchComplaint(id, { status: "in_progress", assignedUser: username });
+  function onUpdateComplaint(updated: ComplaintRow) {
+    setComplaints((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    setSelected(updated);
   }
 
-  function close(id: string) {
-    void patchComplaint(id, { status: "resolved" });
-  }
-
-  function startAssign(id: string) {
-    setAssignTarget(id);
-    setAssignName("");
-  }
-
-  async function confirmAssign() {
-    if (!assignTarget || !assignName.trim()) return;
-    await patchComplaint(assignTarget, {
-      status: "in_progress",
-      assignedUser: assignName.trim(),
-    });
-    setAssignTarget(null);
-    setAssignName("");
-  }
+  const canManage = isManager(role);
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-white/5 bg-white/[0.02] p-4">
-        <Filter
-          label="Статус"
-          value={statusFilter}
-          onChange={setStatusFilter}
-          options={[
-            { value: "all", label: "Все" },
-            { value: "pending", label: "В ожидании" },
-            { value: "in_progress", label: "В работе" },
-            { value: "resolved", label: "Решено" },
-          ]}
-        />
-        <Filter
-          label="Категория"
-          value={categoryFilter}
-          onChange={setCategoryFilter}
-          options={[
-            { value: "all", label: "Все" },
-            ...categories.map((c) => ({ value: c, label: c })),
-          ]}
-        />
-        <Filter
-          label="Приоритет"
-          value={priorityFilter}
-          onChange={setPriorityFilter}
-          options={[
-            { value: "all", label: "Все" },
-            { value: "Высокий", label: "Высокий" },
-            { value: "Средний", label: "Средний" },
-            { value: "Низкий", label: "Низкий" },
-          ]}
-        />
-        <div className="ml-auto text-sm text-zinc-500">
-          Показано: <span className="text-zinc-200">{filtered.length}</span> из{" "}
-          {complaints.length}
-        </div>
-      </div>
+    <div className="flex h-full w-full">
+      {/* Левая иконочная панель */}
+      <Toolbar
+        activePanel={activePanel}
+        onSelect={setActivePanel}
+        onToggleHeatmap={() => setShowHeatmap((v) => !v)}
+        heatmapOn={showHeatmap}
+      />
 
-      {error && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
-          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
-          <div>{error}</div>
-        </div>
+      {/* Drawer-панель (опциональная) */}
+      {activePanel === "my" && (
+        <Drawer
+          title={t("myCases.title")}
+          subtitle={t("myCases.subtitle")}
+          onClose={() => setActivePanel(null)}
+        >
+          <MyCasesPanel items={myCases} onPick={setSelected} />
+        </Drawer>
+      )}
+      {activePanel === "list" && (
+        <Drawer
+          title={t("complaintList.title")}
+          subtitle={t("complaintList.subtitle")}
+          onClose={() => setActivePanel(null)}
+        >
+          <ComplaintListPanel items={complaints} onPick={setSelected} />
+        </Drawer>
+      )}
+      {activePanel === "analytics" && (
+        <Drawer
+          title={t("toolbar.analytics")}
+          onClose={() => setActivePanel(null)}
+          width="640px"
+        >
+          {/* Экспорт-отчёт переехал сюда из тулбара — ближе к аналитике. */}
+          <div className="mb-5">
+            <ExportPanel org={org} />
+          </div>
+          <AnalyticsClient />
+        </Drawer>
+      )}
+      {activePanel === "profile" && (
+        <Drawer
+          title={t("profile.title")}
+          subtitle={t("profile.subtitle")}
+          onClose={() => setActivePanel(null)}
+        >
+          <ProfilePanel
+            user={{ displayName, username, role, org }}
+            duty={duty}
+            dutyPending={dutyPending}
+            onToggleDuty={toggleDuty}
+          />
+        </Drawer>
+      )}
+      {activePanel === "settings" && (
+        <Drawer
+          title={t("settings.title")}
+          onClose={() => setActivePanel(null)}
+        >
+          <SettingsPanel />
+        </Drawer>
       )}
 
-      <div className="grid gap-6 lg:grid-cols-5">
-        <div className="space-y-4 lg:col-span-3">
-          <h2 className="text-lg font-semibold">Актуальные проблемы</h2>
-          {filtered.length === 0 ? (
-            <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-10 text-center text-sm text-zinc-500">
-              По текущим фильтрам жалоб нет.
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {filtered.map((c) => {
-                const status = STATUS_LABELS[c.status] ?? STATUS_LABELS.pending;
-                const StatusIcon = status.Icon;
-                const isPending = pendingId === c.id;
-                return (
-                  <article
-                    key={c.id}
-                    className="space-y-3 rounded-2xl border border-white/5 bg-white/[0.02] p-4"
-                  >
-                    <div className="flex flex-wrap items-center gap-2 text-xs">
-                      <span
-                        className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 font-medium ring-1 ${status.className}`}
-                      >
-                        <StatusIcon className="h-3 w-3" />
-                        {status.label}
-                      </span>
-                      <span
-                        className={`rounded-md px-2 py-0.5 font-medium ${
-                          PRIORITY_STYLES[c.priority] ??
-                          "bg-zinc-500/15 text-zinc-300"
-                        }`}
-                      >
-                        {c.priority}
-                      </span>
-                      <span className="rounded-md bg-white/5 px-2 py-0.5 text-zinc-300">
-                        {c.category}
-                      </span>
-                      <span className="ml-auto text-zinc-500">
-                        {new Date(c.createdAt).toLocaleString("ru-RU")}
-                      </span>
-                    </div>
+      {/* Основная зона — карта + плавающая карточка */}
+      <main className="relative flex-1">
+        <ComplaintsMap
+          complaints={complaints}
+          showHeatmap={showHeatmap}
+          org={org}
+          onMarkerClick={(c) => setSelected(c)}
+          height="100%"
+        />
 
-                    <p className="text-sm leading-relaxed text-zinc-200">
-                      {c.officialText}
-                    </p>
-
-                    <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-                      {c.address && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {c.address}
-                        </span>
-                      )}
-                      {c.assignedUser && (
-                        <span className="inline-flex items-center gap-1 text-zinc-300">
-                          Исполнитель:{" "}
-                          <span className="font-medium">{c.assignedUser}</span>
-                        </span>
-                      )}
-                      <span className="font-mono text-zinc-600">{c.id.slice(0, 8)}…</span>
-                    </div>
-
-                    {assignTarget === c.id ? (
-                      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-white/10 bg-black/30 p-3">
-                        <input
-                          autoFocus
-                          value={assignName}
-                          onChange={(e) => setAssignName(e.target.value)}
-                          placeholder="Имя сотрудника / бригады"
-                          className="flex-1 rounded-lg border border-white/10 bg-[#0d0d0d] px-3 py-2 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={confirmAssign}
-                          disabled={!assignName.trim() || isPending}
-                          className="rounded-lg bg-indigo-500 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:opacity-50"
-                        >
-                          Назначить
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setAssignTarget(null)}
-                          className="rounded-lg bg-white/5 px-3 py-2 text-sm text-zinc-300 transition hover:bg-white/10"
-                        >
-                          Отмена
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap items-center gap-2">
-                        {c.status === "pending" && (
-                          <ActionButton
-                            onClick={() => takeInWork(c.id)}
-                            disabled={isPending}
-                            tone="indigo"
-                          >
-                            <Wrench className="h-3.5 w-3.5" />
-                            Взять в работу
-                          </ActionButton>
-                        )}
-                        {c.status !== "resolved" && (
-                          <ActionButton
-                            onClick={() => startAssign(c.id)}
-                            disabled={isPending}
-                            tone="muted"
-                          >
-                            <UserPlus className="h-3.5 w-3.5" />
-                            Назначить
-                          </ActionButton>
-                        )}
-                        {c.status === "in_progress" && (
-                          <ActionButton
-                            onClick={() => close(c.id)}
-                            disabled={isPending}
-                            tone="emerald"
-                          >
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                            Закрыть
-                          </ActionButton>
-                        )}
-                        {isPending && (
-                          <Loader2 className="h-4 w-4 animate-spin text-zinc-500" />
-                        )}
-                      </div>
-                    )}
-                  </article>
-                );
-              })}
+        {/* Статус-индикатор в правом верхнем углу */}
+        <div
+          className="pointer-events-none absolute right-4 top-4 flex flex-col items-end gap-2"
+          style={{ zIndex: 1000 }}
+        >
+          <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-app bg-surface/95 px-3 py-1.5 text-xs shadow-md backdrop-blur">
+            <span
+              className={`inline-block h-2 w-2 rounded-full ${
+                duty === "on_duty" ? "bg-emerald-500" : "bg-zinc-400"
+              }`}
+            />
+            <span className="text-app">{displayName}</span>
+            <span className="text-muted-app">·</span>
+            <span className="text-muted-app">
+              {duty === "on_duty" ? t("duty.on") : t("duty.off")}
+            </span>
+          </div>
+          {globalError && (
+            <div className="pointer-events-auto flex max-w-xs items-start gap-2 rounded-md border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs text-red-500">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+              <div>{globalError}</div>
             </div>
           )}
         </div>
 
-        <div className="space-y-4 lg:col-span-2">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Карта обращений</h2>
-            <button
-              type="button"
-              onClick={() => setShowHeatmap((v) => !v)}
-              className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs transition ${
-                showHeatmap
-                  ? "bg-orange-500/20 text-orange-300 hover:bg-orange-500/30"
-                  : "bg-white/5 text-zinc-300 hover:bg-white/10"
-              }`}
-            >
-              <Flame className="h-3.5 w-3.5" />
-              {showHeatmap ? "Тепловая карта вкл." : "Тепловая карта"}
-            </button>
+        {/* Плавающая карточка жалобы по клику.
+            z-[1000] — гарантированно поверх leaflet-pane (max ~700-800). */}
+        {selected && (
+          <div
+            className="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2"
+            style={{ zIndex: 1000 }}
+          >
+            <ComplaintCard
+              complaint={selected}
+              myDisplayName={displayName}
+              canManage={canManage}
+              onClose={() => setSelected(null)}
+              onUpdate={onUpdateComplaint}
+            />
           </div>
-
-          <ComplaintsMap
-            complaints={onMap}
-            showHeatmap={showHeatmap}
-            org={org}
-          />
-
-          <div className="rounded-xl border border-white/5 bg-white/[0.02] p-3 text-xs text-zinc-500">
-            <div className="mb-2 font-medium text-zinc-300">Цвет маркера = давность:</div>
-            <div className="grid grid-cols-2 gap-y-1">
-              <Legend color="#10b981" label="< 1 часа" />
-              <Legend color="#f59e0b" label="1–6 часов" />
-              <Legend color="#fb923c" label="6–24 часа" />
-              <Legend color="#ef4444" label="> 24 часов" />
-            </div>
-          </div>
-        </div>
-      </div>
+        )}
+      </main>
     </div>
-  );
-}
-
-function Filter({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (v: string) => void;
-  options: { value: string; label: string }[];
-}) {
-  return (
-    <label className="flex items-center gap-2 text-sm text-zinc-400">
-      <span>{label}:</span>
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-white/10 bg-[#0d0d0d] px-2 py-1.5 text-sm text-white focus:border-indigo-500 focus:outline-none"
-      >
-        {options.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function ActionButton({
-  onClick,
-  disabled,
-  tone,
-  children,
-}: {
-  onClick: () => void;
-  disabled?: boolean;
-  tone: "indigo" | "emerald" | "muted";
-  children: React.ReactNode;
-}) {
-  const tones: Record<string, string> = {
-    indigo: "bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25",
-    emerald: "bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/25",
-    muted: "bg-white/5 text-zinc-300 hover:bg-white/10",
-  };
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      disabled={disabled}
-      className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition disabled:opacity-50 ${tones[tone]}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function Legend({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="inline-flex items-center gap-2">
-      <span
-        className="h-2.5 w-2.5 rounded-full"
-        style={{ background: color }}
-      />
-      {label}
-    </span>
   );
 }

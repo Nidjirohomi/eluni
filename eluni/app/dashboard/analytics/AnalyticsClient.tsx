@@ -97,7 +97,7 @@ export function AnalyticsClient() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center text-zinc-500">
+      <div className="flex h-64 items-center justify-center text-muted-app">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
         Загрузка аналитики...
       </div>
@@ -106,7 +106,7 @@ export function AnalyticsClient() {
 
   if (error || !analytics) {
     return (
-      <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-300">
+      <div className="flex items-start gap-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-500">
         <AlertCircle className="mt-0.5 h-4 w-4" />
         <div>{error ?? "Не удалось загрузить аналитику."}</div>
       </div>
@@ -280,11 +280,11 @@ function Stat({
     muted: "text-zinc-300",
   };
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <div className="text-xs uppercase tracking-wide text-zinc-500">
+    <div className="rounded-2xl border border-app bg-surface p-5">
+      <div className="text-xs uppercase tracking-wide text-muted-app">
         {label}
       </div>
-      <div className={`mt-1 text-3xl font-semibold ${tone ? tones[tone] : "text-white"}`}>
+      <div className={`mt-1 text-3xl font-semibold ${tone ? tones[tone] : "text-app"}`}>
         {value}
       </div>
     </div>
@@ -299,8 +299,8 @@ function Card({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-white/5 bg-white/[0.02] p-5">
-      <h3 className="mb-4 text-sm font-medium text-zinc-300">{title}</h3>
+    <div className="rounded-2xl border border-app bg-surface p-5">
+      <h3 className="mb-4 text-sm font-medium text-app">{title}</h3>
       {children}
     </div>
   );
@@ -308,7 +308,7 @@ function Card({
 
 function Empty() {
   return (
-    <div className="flex h-[200px] items-center justify-center text-sm text-zinc-500">
+    <div className="flex h-[200px] items-center justify-center text-sm text-muted-app">
       Недостаточно данных
     </div>
   );
@@ -323,7 +323,7 @@ function PredictionCard({
 }) {
   if (loading) {
     return (
-      <div className="flex items-center gap-2 rounded-2xl border border-white/5 bg-white/[0.02] p-5 text-sm text-zinc-500">
+      <div className="flex items-center gap-2 rounded-2xl border border-app bg-surface p-5 text-sm text-muted-app">
         <Loader2 className="h-4 w-4 animate-spin" />
         Готовим прогноз...
       </div>
@@ -352,21 +352,21 @@ function PredictionCard({
         : "text-zinc-300 bg-white/5";
 
   return (
-    <div className="rounded-2xl border border-indigo-500/20 bg-gradient-to-br from-indigo-500/[0.05] to-transparent p-6">
+    <div className="rounded-2xl border border-app bg-surface p-6">
       <div className="mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-indigo-400" />
-        <h3 className="text-base font-semibold">ИИ-прогноз на завтра</h3>
+        <Sparkles className="h-5 w-5 accent-app" />
+        <h3 className="text-base font-semibold text-app">ИИ-прогноз на завтра</h3>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
+          <div className="text-xs uppercase tracking-wide text-muted-app">
             Ожидается жалоб
           </div>
-          <div className="mt-1 text-4xl font-bold text-white">
+          <div className="mt-1 text-4xl font-bold text-app">
             ~{prediction.expectedTomorrow}
           </div>
-          <div className="mt-1 flex items-center gap-1 text-xs text-zinc-500">
+          <div className="mt-1 flex items-center gap-1 text-xs text-muted-app">
             <Clock className="h-3 w-3" />
             На основе последних {prediction.basedOnDays} дней (
             {prediction.total7d} жалоб)
@@ -374,7 +374,7 @@ function PredictionCard({
         </div>
 
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
+          <div className="text-xs uppercase tracking-wide text-muted-app">
             Тренд
           </div>
           <div
@@ -384,18 +384,18 @@ function PredictionCard({
             {trendLabel}
           </div>
           {prediction.spikeCategory && (
-            <div className="mt-2 text-xs text-zinc-400">
+            <div className="mt-2 text-xs text-muted-app">
               Возможный всплеск:{" "}
-              <span className="text-zinc-200">{prediction.spikeCategory}</span>
+              <span className="text-app">{prediction.spikeCategory}</span>
             </div>
           )}
         </div>
 
         <div>
-          <div className="text-xs uppercase tracking-wide text-zinc-500">
+          <div className="text-xs uppercase tracking-wide text-muted-app">
             Обоснование
           </div>
-          <p className="mt-1 text-sm text-zinc-300">{prediction.reasoning}</p>
+          <p className="mt-1 text-sm text-app">{prediction.reasoning}</p>
         </div>
       </div>
     </div>

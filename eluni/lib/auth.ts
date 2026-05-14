@@ -1,38 +1,18 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
 import { cookies } from "next/headers";
+import { isRole, type Role } from "./roles";
+
+// Реэкспорт чистых хелперов — чтобы существующие импорты `@/lib/auth`
+// (Role, ROLE_TO_ORG, isManager и т.п.) продолжали работать.
+export {
+  ROLES,
+  ROLE_TO_ORG,
+  isManager,
+  isRole,
+  type Role,
+} from "./roles";
 
 export const TOKEN_NAME = "token";
-
-export type Role =
-  | "mvd"
-  | "gai"
-  | "tazalyk"
-  | "vodokanal"
-  | "teploset"
-  | "meria";
-
-export const ROLES: readonly Role[] = [
-  "mvd",
-  "gai",
-  "tazalyk",
-  "vodokanal",
-  "teploset",
-  "meria",
-] as const;
-
-// Маппинг роли пользователя → значение поля Complaint.assignedTo
-export const ROLE_TO_ORG: Record<Role, string> = {
-  mvd: "МВД",
-  gai: "ГАИ",
-  tazalyk: "Тазалык",
-  vodokanal: "Бишкекводоканал",
-  teploset: "Бишкектеплосеть",
-  meria: "Мэрия",
-};
-
-export const ORG_TO_ROLE: Record<string, Role> = Object.fromEntries(
-  Object.entries(ROLE_TO_ORG).map(([role, org]) => [org, role as Role])
-) as Record<string, Role>;
 
 export interface SessionPayload extends JWTPayload {
   userId: string;
@@ -49,10 +29,6 @@ function getSecret(): Uint8Array {
     );
   }
   return new TextEncoder().encode(secret);
-}
-
-export function isRole(value: unknown): value is Role {
-  return typeof value === "string" && (ROLES as readonly string[]).includes(value);
 }
 
 export async function signSession(

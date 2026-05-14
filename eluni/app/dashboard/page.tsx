@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser, ROLE_TO_ORG } from "@/lib/auth";
-import { prisma } from "@/lib/db";
-import { DashboardClient, type ComplaintRow } from "./DashboardClient";
+import { db, type ComplaintModel, type UserModel } from "@/lib/models";
+import { DashboardClient } from "./DashboardClient";
+import type { ComplaintRow } from "./types";
 
 export const dynamic = "force-dynamic";
 
@@ -11,26 +12,15 @@ export default async function DashboardPage() {
 
   const org = ROLE_TO_ORG[user.role];
 
-  const raw = (await prisma.complaint.findMany({
-    where: { assignedTo: org },
-    orderBy: { createdAt: "desc" },
-  })) as Array<{
-    id: string;
-    originalText: string;
-    officialText: string;
-    category: string;
-    priority: string;
-    assignedTo: string;
-    assignedUser: string | null;
-    status: string;
-    address: string | null;
-    lat: number | null;
-    lng: number | null;
-    mediaUrls: string | null;
-    source: string;
-    createdAt: Date;
-    updatedAt: Date;
-  }>;
+  const [raw, me] = await Promise.all([
+    db.complaint.findMany({
+      where: { assignedTo: org },
+      orderBy: { createdAt: "desc" },
+    }) as Promise<ComplaintModel[]>,
+    db.user.findUnique({
+      where: { id: user.userId },
+    }) as Promise<UserModel | null>,
+  ]);
 
   const complaints: ComplaintRow[] = raw.map((c) => ({
     id: c.id,
@@ -49,12 +39,17 @@ export default async function DashboardPage() {
     updatedAt: c.updatedAt.toISOString(),
   }));
 
+  const initialDuty: "on_duty" | "off_duty" =
+    me?.status === "on_duty" ? "on_duty" : "off_duty";
+
   return (
     <DashboardClient
       org={org}
       role={user.role}
       username={user.username}
+      displayName={user.displayName}
       initialComplaints={complaints}
+      initialDuty={initialDuty}
     />
   );
 }

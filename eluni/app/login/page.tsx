@@ -2,12 +2,25 @@
 
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ShieldCheck, Loader2, AlertCircle, LogIn } from "lucide-react";
+import {
+  ShieldCheck,
+  Loader2,
+  AlertCircle,
+  LogIn,
+  Sun,
+  Moon,
+  Languages,
+} from "lucide-react";
+import { useI18n } from "@/lib/i18n/I18nProvider";
+import { useTheme } from "@/lib/theme/ThemeProvider";
 
 export default function LoginPage() {
   const router = useRouter();
   const params = useSearchParams();
   const from = params.get("from") ?? "/dashboard";
+
+  const { t, locale, setLocale } = useI18n();
+  const { theme, toggle } = useTheme();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -37,7 +50,7 @@ export default function LoginPage() {
       router.refresh();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Не удалось войти в систему."
+        err instanceof Error ? err.message : t("errors.unknown")
       );
     } finally {
       setLoading(false);
@@ -45,24 +58,49 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="mx-auto flex min-h-[60vh] w-full max-w-md flex-col justify-center">
+    <div className="relative mx-auto flex min-h-screen w-full max-w-md flex-col justify-center px-6 py-12">
+      {/* Тулбар: тема / язык */}
+      <div className="absolute right-6 top-6 flex items-center gap-1">
+        <button
+          type="button"
+          onClick={() => setLocale(locale === "ru" ? "kg" : "ru")}
+          className="flex items-center gap-1 rounded-lg px-2.5 py-2 text-app transition hover:bg-surface-2"
+          title="Сменить язык / Тилди алмаштыруу"
+        >
+          <Languages className="h-4 w-4" />
+          <span className="text-xs font-medium uppercase">{locale}</span>
+        </button>
+        <button
+          type="button"
+          onClick={toggle}
+          className="flex h-9 w-9 items-center justify-center rounded-lg text-app transition hover:bg-surface-2"
+          title="Toggle theme"
+        >
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
+        </button>
+      </div>
+
       <div className="mb-8 flex items-center gap-2">
-        <ShieldCheck className="h-6 w-6 text-indigo-400" />
-        <h1 className="text-2xl font-semibold tracking-tight">
-          Кабинет госслужащего
+        <ShieldCheck className="h-6 w-6 accent-app" />
+        <h1 className="text-2xl font-semibold tracking-tight text-app">
+          {t("login.title")}
         </h1>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="space-y-4 rounded-2xl border border-white/5 bg-white/[0.02] p-6"
+        className="space-y-4 rounded-2xl border border-app bg-surface p-6"
       >
         <div>
           <label
             htmlFor="username"
-            className="mb-2 block text-sm font-medium text-zinc-300"
+            className="mb-2 block text-sm font-medium text-app"
           >
-            Логин
+            {t("login.username")}
           </label>
           <input
             id="username"
@@ -70,7 +108,7 @@ export default function LoginPage() {
             onChange={(e) => setUsername(e.target.value)}
             autoComplete="username"
             placeholder="mvd"
-            className="w-full rounded-xl border border-white/10 bg-[#0d0d0d] px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="w-full rounded-xl border border-app bg-surface-2 px-4 py-3 text-sm text-app placeholder:text-muted-app focus:border-accent-app focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
             required
           />
         </div>
@@ -78,9 +116,9 @@ export default function LoginPage() {
         <div>
           <label
             htmlFor="password"
-            className="mb-2 block text-sm font-medium text-zinc-300"
+            className="mb-2 block text-sm font-medium text-app"
           >
-            Пароль
+            {t("login.password")}
           </label>
           <input
             id="password"
@@ -89,13 +127,13 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             autoComplete="current-password"
             placeholder="••••••"
-            className="w-full rounded-xl border border-white/10 bg-[#0d0d0d] px-4 py-3 text-sm text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+            className="w-full rounded-xl border border-app bg-surface-2 px-4 py-3 text-sm text-app placeholder:text-muted-app focus:border-accent-app focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
             required
           />
         </div>
 
         {error && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-300">
+          <div className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-500">
             <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
             <span>{error}</span>
           </div>
@@ -104,41 +142,70 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading || !username.trim() || !password}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-500 px-5 py-3 text-sm font-medium text-white transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-accent-app px-5 py-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Входим...
+              {t("common.loading")}
             </>
           ) : (
             <>
               <LogIn className="h-4 w-4" />
-              Войти
+              {t("login.submit")}
             </>
           )}
         </button>
       </form>
 
-      <div className="mt-6 rounded-xl border border-white/5 bg-white/[0.02] p-4 text-xs text-zinc-400">
-        <div className="mb-2 font-medium text-zinc-300">
-          Тестовые аккаунты (пароль <code className="text-indigo-300">123123</code>)
+      <div className="mt-6 rounded-xl border border-app bg-surface p-4 text-xs text-muted-app">
+        <div className="mb-3 font-medium text-app">
+          {t("login.testAccounts")} ({t("login.passwordHint")}{" "}
+          <code className="accent-app">123123</code>)
         </div>
-        <div className="grid grid-cols-2 gap-1 font-mono">
-          <span>mvd</span>
-          <span className="text-zinc-500">МВД</span>
-          <span>gai</span>
-          <span className="text-zinc-500">ГАИ</span>
-          <span>tazalyk</span>
-          <span className="text-zinc-500">Тазалык</span>
-          <span>vodokanal</span>
-          <span className="text-zinc-500">Бишкекводоканал</span>
-          <span>teploset</span>
-          <span className="text-zinc-500">Бишкектеплосеть</span>
-          <span>meria</span>
-          <span className="text-zinc-500">Мэрия</span>
+
+        <div className="space-y-1.5">
+          <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 pb-1 text-[10px] uppercase tracking-wide text-muted-app">
+            <span>Сотрудник</span>
+            <span>Начальник</span>
+            <span className="whitespace-nowrap">Орган</span>
+          </div>
+          <div className="space-y-1.5 font-mono">
+            <AccountRow employee="mvd" admin="admin_mvd" org="МВД" />
+            <AccountRow employee="gai" admin="admin_gai" org="ГАИ" />
+            <AccountRow employee="tazalyk" admin="admin_tazalyk" org="Тазалык" />
+            <AccountRow
+              employee="vodokanal"
+              admin="admin_vodokanal"
+              org="Бишкекводоканал"
+            />
+            <AccountRow
+              employee="teploset"
+              admin="admin_teploset"
+              org="Бишкектеплосеть"
+            />
+            <AccountRow employee="meria" admin="admin_meria" org="Мэрия" />
+          </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function AccountRow({
+  employee,
+  admin,
+  org,
+}: {
+  employee: string;
+  admin: string;
+  org: string;
+}) {
+  return (
+    <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2">
+      <span className="truncate">{employee}</span>
+      <span className="truncate">{admin}</span>
+      <span className="whitespace-nowrap text-muted-app">{org}</span>
     </div>
   );
 }

@@ -2,13 +2,121 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+// telegramUserId можно подставить позже — если задан, при назначении жалобы
+// сотруднику автоматически уйдёт уведомление в Telegram (через Bot API).
+//
+// На каждый госорган — пара аккаунтов:
+//   • <org>        — рядовой сотрудник (может «взять в работу» / «закрыть»)
+//   • admin_<org>  — начальник органа (дополнительно может назначать жалобы
+//                    конкретному дежурному сотруднику)
 const USERS = [
-  { username: "mvd", password: "123123", role: "mvd", displayName: "Сотрудник МВД" },
-  { username: "gai", password: "123123", role: "gai", displayName: "Сотрудник ГАИ" },
-  { username: "tazalyk", password: "123123", role: "tazalyk", displayName: "Сотрудник Тазалык" },
-  { username: "vodokanal", password: "123123", role: "vodokanal", displayName: "Сотрудник Бишкекводоканал" },
-  { username: "teploset", password: "123123", role: "teploset", displayName: "Сотрудник Бишкектеплосеть" },
-  { username: "meria", password: "123123", role: "meria", displayName: "Сотрудник Мэрии" },
+  // ─── МВД ────────────────────────────────────────────
+  {
+    username: "mvd",
+    password: "123123",
+    role: "mvd",
+    displayName: "Сотрудник МВД",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_MVD ?? null,
+  },
+  {
+    username: "admin_mvd",
+    password: "123123",
+    role: "admin_mvd",
+    displayName: "Начальник МВД",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_ADMIN_MVD ?? null,
+  },
+
+  // ─── ГАИ ────────────────────────────────────────────
+  {
+    username: "gai",
+    password: "123123",
+    role: "gai",
+    displayName: "Сотрудник ГАИ",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_GAI ?? null,
+  },
+  {
+    username: "admin_gai",
+    password: "123123",
+    role: "admin_gai",
+    displayName: "Начальник ГАИ",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_ADMIN_GAI ?? null,
+  },
+
+  // ─── Тазалык ────────────────────────────────────────
+  {
+    username: "tazalyk",
+    password: "123123",
+    role: "tazalyk",
+    displayName: "Сотрудник Тазалык",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_TAZALYK ?? null,
+  },
+  {
+    username: "admin_tazalyk",
+    password: "123123",
+    role: "admin_tazalyk",
+    displayName: "Начальник Тазалык",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_ADMIN_TAZALYK ?? null,
+  },
+
+  // ─── Бишкекводоканал ────────────────────────────────
+  {
+    username: "vodokanal",
+    password: "123123",
+    role: "vodokanal",
+    displayName: "Сотрудник Бишкекводоканал",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_VODOKANAL ?? null,
+  },
+  {
+    username: "admin_vodokanal",
+    password: "123123",
+    role: "admin_vodokanal",
+    displayName: "Начальник Бишкекводоканал",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_ADMIN_VODOKANAL ?? null,
+  },
+
+  // ─── Бишкектеплосеть ────────────────────────────────
+  {
+    username: "teploset",
+    password: "123123",
+    role: "teploset",
+    displayName: "Сотрудник Бишкектеплосеть",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_TEPLOSET ?? null,
+  },
+  {
+    username: "admin_teploset",
+    password: "123123",
+    role: "admin_teploset",
+    displayName: "Начальник Бишкектеплосеть",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_ADMIN_TEPLOSET ?? null,
+  },
+
+  // ─── Мэрия ──────────────────────────────────────────
+  {
+    username: "meria",
+    password: "123123",
+    role: "meria",
+    displayName: "Сотрудник Мэрии",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_MERIA ?? null,
+  },
+  {
+    username: "admin_meria",
+    password: "123123",
+    role: "admin_meria",
+    displayName: "Начальник Мэрии",
+    status: "on_duty",
+    telegramUserId: process.env.SEED_TG_ADMIN_MERIA ?? null,
+  },
 ];
 
 // Тестовые жалобы вокруг центра Бишкека (≈42.87, 74.59).
