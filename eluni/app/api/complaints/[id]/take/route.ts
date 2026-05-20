@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, type ComplaintModel, type UserModel } from "@/lib/models";
-import { getCurrentUser, ROLE_TO_ORG, type Role } from "@/lib/auth";
+import {
+  getCurrentUser,
+  ROLE_TO_ORG,
+  canActOnComplaints,
+  type Role,
+} from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -15,6 +20,12 @@ export async function PATCH(
       return NextResponse.json(
         { error: "Требуется авторизация." },
         { status: 401 }
+      );
+    }
+    if (!canActOnComplaints(session.role)) {
+      return NextResponse.json(
+        { error: "У вас нет прав на эту операцию." },
+        { status: 403 }
       );
     }
 

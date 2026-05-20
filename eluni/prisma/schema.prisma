@@ -22,6 +22,7 @@ model Complaint {
   mediaUrls      String?
   source         String   @default("web")
   telegramUserId String?
+  userId         String?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
@@ -34,5 +35,8 @@ model User {
   displayName    String
   status         String   @default("off_duty")
   telegramUserId String?
+  // Уникальный 6-символьный токен для привязки Telegram через @ElUniGovBot.
+  // У граждан = null, у госслужащих заполняется при сидинге.
+  bindToken      String?  @unique
   createdAt      DateTime @default(now())
 }

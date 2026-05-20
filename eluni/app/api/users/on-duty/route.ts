@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { db, type UserModel } from "@/lib/models";
-import { getCurrentUser, ROLE_TO_ORG, type Role } from "@/lib/auth";
+import {
+  getCurrentUser,
+  ROLE_TO_ORG,
+  isCitizen,
+  isSuperadmin,
+  type Role,
+} from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -13,6 +19,12 @@ export async function GET() {
       return NextResponse.json(
         { error: "Требуется авторизация." },
         { status: 401 }
+      );
+    }
+    if (isCitizen(user.role) || isSuperadmin(user.role)) {
+      return NextResponse.json(
+        { error: "Этот раздел недоступен для вашей роли." },
+        { status: 403 }
       );
     }
 

@@ -33,8 +33,8 @@ export function ComplaintListPanel({ items, onPick }: Props) {
   }, [items, statusFilter, categoryFilter, priorityFilter]);
 
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2">
+    <div className="space-y-4">
+      <div className="grid grid-cols-3 gap-3">
         <Filter
           label={t("filters.status")}
           value={statusFilter}
@@ -68,41 +68,41 @@ export function ComplaintListPanel({ items, onPick }: Props) {
         />
       </div>
 
-      <div className="text-xs text-muted-app">
+      <div className="text-sm text-muted-app">
         {t("common.showing")}:{" "}
-        <span className="text-app">{filtered.length}</span> {t("common.of")}{" "}
-        {items.length}
+        <span className="font-semibold text-app">{filtered.length}</span>{" "}
+        {t("common.of")} {items.length}
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-xl border border-app bg-surface-2 p-6 text-center text-sm text-muted-app">
+        <div className="rounded-xl border border-app bg-surface-2 p-6 text-center text-base text-muted-app">
           {t("common.noData")}
         </div>
       ) : (
-        <ul className="space-y-2">
+        <ul className="space-y-2.5">
           {filtered.map((c) => (
             <li key={c.id}>
               <button
                 type="button"
                 onClick={() => onPick(c)}
-                className="w-full rounded-xl border border-app bg-surface-2 p-3 text-left transition hover:bg-surface"
+                className="w-full rounded-xl border border-app bg-surface-2 p-4 text-left transition hover:bg-surface"
               >
-                <div className="mb-1 flex flex-wrap items-center gap-1.5 text-[10px]">
+                <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
                   <StatusChip status={c.status} />
-                  <span className="rounded-md bg-indigo-500/15 px-1.5 py-0.5 font-medium text-indigo-600 dark:text-indigo-300">
+                  <span className="rounded-md bg-indigo-500/15 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-300">
                     {c.category}
                   </span>
                   <PriorityChip priority={c.priority} />
-                  <span className="ml-auto text-muted-app">
+                  <span className="ml-auto text-sm text-muted-app">
                     {new Date(c.createdAt).toLocaleDateString("ru-RU")}
                   </span>
                 </div>
-                <div className="line-clamp-2 text-xs text-app">
+                <div className="line-clamp-2 text-base leading-snug text-app">
                   {c.officialText}
                 </div>
-                <div className="mt-1 flex items-center justify-between text-[10px] text-muted-app">
-                  <span>{c.address ?? "—"}</span>
-                  <span>{c.assignedUser ?? t("complaint.noAssignee")}</span>
+                <div className="mt-2 flex items-center justify-between gap-3 text-sm text-muted-app">
+                  <span className="truncate">{c.address ?? "—"}</span>
+                  <span className="flex-shrink-0">{c.assignedUser ?? t("complaint.noAssignee")}</span>
                 </div>
               </button>
             </li>
@@ -125,12 +125,12 @@ function Filter({
   options: { value: string; label: string }[];
 }) {
   return (
-    <label className="flex flex-col gap-1 text-[10px] text-muted-app">
+    <label className="flex flex-col gap-1.5 text-xs font-medium uppercase tracking-wide text-muted-app">
       <span>{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-md border border-app bg-surface px-2 py-1 text-xs text-app"
+        className="min-h-[44px] rounded-lg border border-app bg-surface px-3 py-2 text-sm text-app"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -151,7 +151,7 @@ function StatusChip({ status }: { status: string }) {
   };
   return (
     <span
-      className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+      className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
         styles[status] ?? "bg-zinc-500/15"
       }`}
     >
@@ -168,7 +168,7 @@ function PriorityChip({ priority }: { priority: string }) {
   };
   return (
     <span
-      className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+      className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
         styles[priority] ?? "bg-zinc-500/15"
       }`}
     >

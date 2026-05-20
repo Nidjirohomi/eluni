@@ -14,35 +14,35 @@ export function MyCasesPanel({ items, onPick }: Props) {
 
   if (items.length === 0) {
     return (
-      <div className="rounded-xl border border-app bg-surface-2 p-6 text-center text-sm text-muted-app">
+      <div className="rounded-xl border border-app bg-surface-2 p-6 text-center text-base text-muted-app">
         {t("myCases.empty")}
       </div>
     );
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-2.5">
       {items.map((c) => (
         <li key={c.id}>
           <button
             type="button"
             onClick={() => onPick(c)}
-            className="w-full rounded-xl border border-app bg-surface-2 p-3 text-left transition hover:bg-surface"
+            className="w-full rounded-xl border border-app bg-surface-2 p-4 text-left transition hover:bg-surface"
           >
-            <div className="mb-1 flex items-center gap-2 text-xs">
-              <span className="rounded-md bg-indigo-500/15 px-1.5 py-0.5 font-medium text-indigo-600 dark:text-indigo-300">
+            <div className="mb-2 flex items-center gap-2 text-xs">
+              <span className="rounded-md bg-indigo-500/15 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-300">
                 {c.category}
               </span>
               <PriorityChip priority={c.priority} />
-              <span className="ml-auto text-muted-app">
-                <Clock className="mr-1 inline h-3 w-3" />
+              <span className="ml-auto text-sm text-muted-app">
+                <Clock className="mr-1.5 inline h-4 w-4" />
                 {new Date(c.createdAt).toLocaleString("ru-RU")}
               </span>
             </div>
-            <div className="line-clamp-2 text-sm text-app">{c.officialText}</div>
+            <div className="line-clamp-2 text-base leading-snug text-app">{c.officialText}</div>
             {c.address && (
-              <div className="mt-1 flex items-center gap-1 text-xs text-muted-app">
-                <MapPin className="h-3 w-3" />
+              <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-app">
+                <MapPin className="h-4 w-4" />
                 {c.address}
               </div>
             )}
@@ -61,7 +61,7 @@ function PriorityChip({ priority }: { priority: string }) {
   };
   return (
     <span
-      className={`rounded-md px-1.5 py-0.5 text-[10px] font-medium ${
+      className={`rounded-md px-2 py-0.5 text-xs font-semibold ${
         styles[priority] ?? "bg-zinc-500/15"
       }`}
     >

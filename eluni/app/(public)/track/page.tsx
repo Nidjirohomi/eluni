@@ -13,6 +13,7 @@ interface Complaint {
   assignedTo: string;
   status: string;
   address: string | null;
+  mediaUrls?: string[] | string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -25,6 +25,8 @@ interface Props {
   onSelect: (p: ToolbarPanel) => void;
   onToggleHeatmap: () => void;
   heatmapOn: boolean;
+  /** Скрыть вкладку «Мои дела» (например, для супер-админа). */
+  hideMyCases?: boolean;
 }
 
 export function Toolbar({
@@ -32,6 +34,7 @@ export function Toolbar({
   onSelect,
   onToggleHeatmap,
   heatmapOn,
+  hideMyCases,
 }: Props) {
   const { t } = useI18n();
 
@@ -39,22 +42,24 @@ export function Toolbar({
     onSelect(activePanel === p ? null : p);
 
   return (
-    <aside className="flex h-full w-20 flex-shrink-0 flex-col items-stretch justify-between border-r border-app bg-surface py-3">
-      <div className="flex flex-col items-stretch gap-1 px-1.5">
+    <aside className="flex h-full w-24 flex-shrink-0 flex-col items-stretch justify-between border-r border-app bg-surface py-4">
+      <div className="flex flex-col items-stretch gap-1.5 px-2">
         <div
-          className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-accent-app text-white"
+          className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-app text-white"
           title="ElUni"
         >
-          <ShieldCheck className="h-5 w-5" />
+          <ShieldCheck className="h-7 w-7" />
         </div>
 
-        <ToolbarItem
-          active={activePanel === "my"}
-          onClick={() => toggle("my")}
-          label={t("toolbar.myCasesShort")}
-          title={t("toolbar.myCases")}
-          Icon={Briefcase}
-        />
+        {!hideMyCases && (
+          <ToolbarItem
+            active={activePanel === "my"}
+            onClick={() => toggle("my")}
+            label={t("toolbar.myCasesShort")}
+            title={t("toolbar.myCases")}
+            Icon={Briefcase}
+          />
+        )}
         <ToolbarItem
           active={activePanel === "list"}
           onClick={() => toggle("list")}
@@ -78,7 +83,7 @@ export function Toolbar({
         />
       </div>
 
-      <div className="flex flex-col items-stretch gap-1 px-1.5">
+      <div className="flex flex-col items-stretch gap-1.5 px-2">
         <ToolbarItem
           active={activePanel === "profile"}
           onClick={() => toggle("profile")}
@@ -119,14 +124,14 @@ function ToolbarItem({
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={`flex w-full flex-col items-center gap-1 rounded-lg px-1 py-2 transition disabled:opacity-50 ${
+      className={`flex min-h-[64px] w-full flex-col items-center justify-center gap-1.5 rounded-xl px-1 py-3 transition disabled:opacity-50 ${
         active
           ? "bg-accent-app text-white"
           : "text-app hover:bg-surface-2"
       }`}
     >
-      <Icon className="h-5 w-5" />
-      <span className="text-[10px] leading-tight">{label}</span>
+      <Icon className="h-7 w-7" />
+      <span className="text-xs font-medium leading-tight">{label}</span>
     </button>
   );
 }

@@ -1,6 +1,12 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser, ROLE_TO_ORG } from "@/lib/auth";
+import {
+  getCurrentUser,
+  ROLE_TO_ORG,
+  isSuperadmin,
+  isCitizen,
+} from "@/lib/auth";
 import { db, type ComplaintModel, type UserModel } from "@/lib/models";
+import { parseMediaUrls } from "@/lib/media";
 import { DashboardClient } from "./DashboardClient";
 import type { ComplaintRow } from "./types";
 
@@ -10,11 +16,17 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const org = ROLE_TO_ORG[user.role];
+  // Гражданина в дашборд пускать нельзя — middleware и так редиректит,
+  // но подстрахуемся на случай прямого захода.
+  if (isCitizen(user.role)) redirect("/my/complaints");
+
+  // Супер-админ не привязан к органу — он видит ВСЕ жалобы.
+  const superadmin = isSuperadmin(user.role);
+  const org = superadmin ? "" : ROLE_TO_ORG[user.role];
 
   const [raw, me] = await Promise.all([
     db.complaint.findMany({
-      where: { assignedTo: org },
+      where: superadmin ? {} : { assignedTo: org },
       orderBy: { createdAt: "desc" },
     }) as Promise<ComplaintModel[]>,
     db.user.findUnique({
@@ -35,6 +47,8 @@ export default async function DashboardPage() {
     lat: c.lat,
     lng: c.lng,
     source: c.source,
+    userId: (c as ComplaintModel & { userId?: string | null }).userId ?? null,
+    mediaUrls: parseMediaUrls(c.mediaUrls),
     createdAt: c.createdAt.toISOString(),
     updatedAt: c.updatedAt.toISOString(),
   }));

@@ -11,6 +11,9 @@ export interface ComplaintRow {
   lat: number | null;
   lng: number | null;
   source: string;
+  /** Привязка к гражданину (если подавал верифицированно). null = анонимно. */
+  userId: string | null;
+  mediaUrls: string[] | null;
   createdAt: string;
   updatedAt: string;
 }

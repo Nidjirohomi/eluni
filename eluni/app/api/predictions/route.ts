@@ -1,7 +1,12 @@
 import { NextResponse } from "next/server";
 import Groq from "groq-sdk";
 import { prisma } from "@/lib/db";
-import { getCurrentUser, ROLE_TO_ORG } from "@/lib/auth";
+import {
+  getCurrentUser,
+  ROLE_TO_ORG,
+  isCitizen,
+  isSuperadmin,
+} from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -29,8 +34,15 @@ export async function GET() {
         { status: 401 }
       );
     }
+    if (isCitizen(user.role)) {
+      return NextResponse.json(
+        { error: "Гражданам этот раздел недоступен." },
+        { status: 403 }
+      );
+    }
 
-    const org = ROLE_TO_ORG[user.role];
+    const sa = isSuperadmin(user.role);
+    const org = sa ? "*" : ROLE_TO_ORG[user.role];
     const days = 7;
 
     const since = new Date();
@@ -43,7 +55,9 @@ export async function GET() {
     }
 
     const complaints = (await prisma.complaint.findMany({
-      where: { assignedTo: org, createdAt: { gte: since } },
+      where: sa
+        ? { createdAt: { gte: since } }
+        : { assignedTo: org, createdAt: { gte: since } },
       select: { category: true, createdAt: true },
     })) as ComplaintSlice[];
 

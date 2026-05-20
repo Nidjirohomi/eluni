@@ -7,7 +7,12 @@ import { isRole, type Role } from "./roles";
 export {
   ROLES,
   ROLE_TO_ORG,
+  ALL_ORGS,
   isManager,
+  isSuperadmin,
+  isCitizen,
+  isStaff,
+  canActOnComplaints,
   isRole,
   type Role,
 } from "./roles";

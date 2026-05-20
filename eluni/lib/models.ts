@@ -16,6 +16,7 @@ export interface UserModel {
   displayName: string;
   status: string;
   telegramUserId: string | null;
+  bindToken: string | null;
   createdAt: Date;
 }
 
@@ -34,14 +35,17 @@ export interface ComplaintModel {
   mediaUrls: string | null;
   source: string;
   telegramUserId: string | null;
+  userId: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
 
 interface AnyDelegate {
   findUnique: (args: unknown) => Promise<unknown>;
+  findFirst: (args?: unknown) => Promise<unknown>;
   findMany: (args?: unknown) => Promise<unknown>;
   update: (args: unknown) => Promise<unknown>;
+  updateMany: (args: unknown) => Promise<unknown>;
   create: (args: unknown) => Promise<unknown>;
   delete: (args: unknown) => Promise<unknown>;
   deleteMany: (args?: unknown) => Promise<unknown>;

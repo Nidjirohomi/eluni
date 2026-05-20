@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, type ComplaintModel, type UserModel } from "@/lib/models";
-import { getCurrentUser, ROLE_TO_ORG, type Role } from "@/lib/auth";
-import { sendAssignmentNotification } from "@/lib/telegramNotifier";
+import {
+  getCurrentUser,
+  ROLE_TO_ORG,
+  isManager,
+  type Role,
+} from "@/lib/auth";
+import { sendGovAssignment } from "@/lib/govBotNotifier";
 
 export const runtime = "nodejs";
 
@@ -19,6 +24,13 @@ export async function PATCH(
       return NextResponse.json(
         { error: "Требуется авторизация." },
         { status: 401 }
+      );
+    }
+    // Назначать может только начальник органа.
+    if (!isManager(session.role)) {
+      return NextResponse.json(
+        { error: "Назначать жалобы может только начальник органа." },
+        { status: 403 }
       );
     }
 
@@ -80,7 +92,7 @@ export async function PATCH(
       error: "no_telegram",
     };
     if (assignee.telegramUserId) {
-      notification = await sendAssignmentNotification({
+      notification = await sendGovAssignment({
         telegramUserId: assignee.telegramUserId,
         complaintId: updated.id,
         category: updated.category,

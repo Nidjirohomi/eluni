@@ -281,7 +281,7 @@ function Stat({
   };
   return (
     <div className="rounded-2xl border border-app bg-surface p-5">
-      <div className="text-xs uppercase tracking-wide text-muted-app">
+      <div className="text-sm font-medium uppercase tracking-wide text-muted-app">
         {label}
       </div>
       <div className={`mt-1 text-3xl font-semibold ${tone ? tones[tone] : "text-app"}`}>
@@ -360,7 +360,7 @@ function PredictionCard({
 
       <div className="grid gap-4 md:grid-cols-3">
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-app">
+          <div className="text-sm font-medium uppercase tracking-wide text-muted-app">
             Ожидается жалоб
           </div>
           <div className="mt-1 text-4xl font-bold text-app">
@@ -374,7 +374,7 @@ function PredictionCard({
         </div>
 
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-app">
+          <div className="text-sm font-medium uppercase tracking-wide text-muted-app">
             Тренд
           </div>
           <div
@@ -392,7 +392,7 @@ function PredictionCard({
         </div>
 
         <div>
-          <div className="text-xs uppercase tracking-wide text-muted-app">
+          <div className="text-sm font-medium uppercase tracking-wide text-muted-app">
             Обоснование
           </div>
           <p className="mt-1 text-sm text-app">{prediction.reasoning}</p>

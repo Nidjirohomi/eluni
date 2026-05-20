@@ -1,13 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { ShieldCheck, Send, Search, Sun, Moon, Languages } from "lucide-react";
+import { useEffect, useState } from "react";
+import {
+  ShieldCheck,
+  Send,
+  Sun,
+  Moon,
+  Languages,
+  Inbox,
+  LogIn,
+  LogOut,
+} from "lucide-react";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { useTheme } from "@/lib/theme/ThemeProvider";
+
+interface MeData {
+  userId: string;
+  role: string;
+  username: string;
+  displayName: string;
+}
 
 export function PublicShell({ children }: { children: React.ReactNode }) {
   const { t, locale, setLocale } = useI18n();
   const { theme, toggle } = useTheme();
+  const [me, setMe] = useState<MeData | null>(null);
+
+  // Сессия для шапки — определяем, гражданин ли пользователь, чтобы показать
+  // ссылку «Мои жалобы» / «Войти» / «Выйти».
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => setMe(d ?? null))
+      .catch(() => setMe(null));
+  }, []);
+
+  const isCitizen = me?.role === "citizen";
 
   return (
     <div className="min-h-screen bg-app text-app">
@@ -29,13 +58,19 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
               <Send className="h-4 w-4" />
               <span className="hidden sm:inline">{t("public.submitComplaint")}</span>
             </Link>
-            <Link
-              href="/track"
-              className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-app transition hover:bg-surface-2"
-            >
-              <Search className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("public.track")}</span>
-            </Link>
+            {/* Публичной страницы /track больше нет в шапке — отслеживание
+                жалоб доступно гражданам в /my/complaints после входа. */}
+            {isCitizen && (
+              <Link
+                href="/my/complaints"
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-app transition hover:bg-surface-2"
+              >
+                <Inbox className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {t("public.myComplaints")}
+                </span>
+              </Link>
+            )}
 
             <button
               type="button"
@@ -59,6 +94,28 @@ export function PublicShell({ children }: { children: React.ReactNode }) {
                 <Moon className="h-4 w-4" />
               )}
             </button>
+
+            {/* Вход / выход — справа от темы. */}
+            {me ? (
+              <a
+                href="/api/auth/logout"
+                title={t("toolbar.logout")}
+                className="ml-1 flex items-center gap-1.5 rounded-lg border border-app bg-surface-2 px-2.5 py-1.5 text-xs font-medium text-app transition hover:bg-surface"
+              >
+                <LogOut className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">{me.displayName}</span>
+              </a>
+            ) : (
+              <Link
+                href="/login?from=/"
+                className="ml-1 flex items-center gap-1.5 rounded-lg bg-accent-app px-3 py-1.5 text-xs font-medium text-white transition hover:opacity-90"
+              >
+                <LogIn className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">
+                  {t("login.tundukButton")}
+                </span>
+              </Link>
+            )}
           </div>
         </nav>
       </header>

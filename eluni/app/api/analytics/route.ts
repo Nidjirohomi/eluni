@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser, ROLE_TO_ORG } from "@/lib/auth";
+import {
+  getCurrentUser,
+  ROLE_TO_ORG,
+  isCitizen,
+  isSuperadmin,
+} from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -23,6 +28,12 @@ export async function GET(req: NextRequest) {
         { status: 401 }
       );
     }
+    if (isCitizen(user.role)) {
+      return NextResponse.json(
+        { error: "Гражданам этот раздел недоступен." },
+        { status: 403 }
+      );
+    }
 
     const { searchParams } = new URL(req.url);
     const monthsRaw = parseInt(searchParams.get("months") ?? "6", 10);
@@ -34,7 +45,13 @@ export async function GET(req: NextRequest) {
     since.setMonth(since.getMonth() - months);
     since.setHours(0, 0, 0, 0);
 
-    const org = ROLE_TO_ORG[user.role];
+    // Супер-админ видит общую аналитику по всем органам;
+    // обычные роли — только свой орган.
+    const sa = isSuperadmin(user.role);
+    const org = sa ? "*" : ROLE_TO_ORG[user.role];
+    const where: Record<string, unknown> = sa
+      ? { createdAt: { gte: since } }
+      : { assignedTo: org, createdAt: { gte: since } };
 
     interface ComplaintSlice {
       category: string;
@@ -43,12 +60,13 @@ export async function GET(req: NextRequest) {
       address: string | null;
       lat: number | null;
       lng: number | null;
+      assignedTo: string;
       createdAt: Date;
       updatedAt: Date;
     }
 
     const complaints = (await prisma.complaint.findMany({
-      where: { assignedTo: org, createdAt: { gte: since } },
+      where,
       select: {
         category: true,
         status: true,
@@ -56,6 +74,7 @@ export async function GET(req: NextRequest) {
         address: true,
         lat: true,
         lng: true,
+        assignedTo: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -137,6 +156,18 @@ export async function GET(req: NextRequest) {
       avgResolutionHours = +(totalMs / resolved.length / 1000 / 3600).toFixed(1);
     }
 
+    // Для супер-админа — дополнительно разбивка по органам.
+    let byOrg: { org: string; count: number }[] | undefined;
+    if (sa) {
+      const orgMap = new Map<string, number>();
+      for (const c of complaints) {
+        orgMap.set(c.assignedTo, (orgMap.get(c.assignedTo) ?? 0) + 1);
+      }
+      byOrg = Array.from(orgMap.entries())
+        .map(([o, count]) => ({ org: o, count }))
+        .sort((a, b) => b.count - a.count);
+    }
+
     return NextResponse.json({
       org,
       months,
@@ -147,6 +178,7 @@ export async function GET(req: NextRequest) {
       monthly,
       topDistricts,
       avgResolutionHours,
+      ...(byOrg ? { byOrg } : {}),
     });
   } catch (err) {
     console.error("[GET /api/analytics] error:", err);

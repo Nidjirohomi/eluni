@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { getCurrentUser, ROLE_TO_ORG } from "@/lib/auth";
+import {
+  getCurrentUser,
+  ROLE_TO_ORG,
+  canActOnComplaints,
+} from "@/lib/auth";
+import { parseMediaUrls } from "@/lib/media";
 
 export const runtime = "nodejs";
 
@@ -23,7 +28,10 @@ export async function GET(
       );
     }
 
-    return NextResponse.json(complaint, { status: 200 });
+    return NextResponse.json(
+      { ...complaint, mediaUrls: parseMediaUrls(complaint.mediaUrls) },
+      { status: 200 }
+    );
   } catch (err) {
     console.error("[GET /api/complaints/:id] error:", err);
     const message =
@@ -37,12 +45,18 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   try {
-    // Менять статус может только авторизованный госслужащий.
+    // Менять статус может только авторизованный госслужащий, кроме супер-админа.
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json(
         { error: "Требуется авторизация." },
         { status: 401 }
+      );
+    }
+    if (!canActOnComplaints(user.role)) {
+      return NextResponse.json(
+        { error: "У вас нет прав на изменение жалоб." },
+        { status: 403 }
       );
     }
 

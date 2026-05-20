@@ -46,7 +46,10 @@ export default function LoginPage() {
         throw new Error(data?.error ?? `HTTP ${res.status}`);
       }
 
-      router.push(from.startsWith("/dashboard") ? from : "/dashboard");
+      // После логина возвращаем туда, откуда пришли. Для citizen middleware
+      // сам перенаправит /dashboard → /my/complaints, для госслужащих —
+      // обратно: /my/* → /dashboard.
+      router.push(from || "/dashboard");
       router.refresh();
     } catch (err) {
       setError(
@@ -158,54 +161,7 @@ export default function LoginPage() {
         </button>
       </form>
 
-      <div className="mt-6 rounded-xl border border-app bg-surface p-4 text-xs text-muted-app">
-        <div className="mb-3 font-medium text-app">
-          {t("login.testAccounts")} ({t("login.passwordHint")}{" "}
-          <code className="accent-app">123123</code>)
-        </div>
-
-        <div className="space-y-1.5">
-          <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2 pb-1 text-[10px] uppercase tracking-wide text-muted-app">
-            <span>Сотрудник</span>
-            <span>Начальник</span>
-            <span className="whitespace-nowrap">Орган</span>
-          </div>
-          <div className="space-y-1.5 font-mono">
-            <AccountRow employee="mvd" admin="admin_mvd" org="МВД" />
-            <AccountRow employee="gai" admin="admin_gai" org="ГАИ" />
-            <AccountRow employee="tazalyk" admin="admin_tazalyk" org="Тазалык" />
-            <AccountRow
-              employee="vodokanal"
-              admin="admin_vodokanal"
-              org="Бишкекводоканал"
-            />
-            <AccountRow
-              employee="teploset"
-              admin="admin_teploset"
-              org="Бишкектеплосеть"
-            />
-            <AccountRow employee="meria" admin="admin_meria" org="Мэрия" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AccountRow({
-  employee,
-  admin,
-  org,
-}: {
-  employee: string;
-  admin: string;
-  org: string;
-}) {
-  return (
-    <div className="grid grid-cols-[1fr_1fr_auto] items-center gap-2">
-      <span className="truncate">{employee}</span>
-      <span className="truncate">{admin}</span>
-      <span className="whitespace-nowrap text-muted-app">{org}</span>
+      {/* Тестовые аккаунты — см. CREDENTIALS.md в корне проекта. */}
     </div>
   );
 }

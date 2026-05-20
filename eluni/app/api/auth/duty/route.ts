@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db, type UserModel } from "@/lib/models";
-import { getCurrentUser } from "@/lib/auth";
+import { getCurrentUser, isCitizen, isSuperadmin } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -15,6 +15,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         { error: "Требуется авторизация." },
         { status: 401 }
+      );
+    }
+    // Смену открывают только сотрудники органов; супер-админ и гражданин — нет.
+    if (isCitizen(user.role) || isSuperadmin(user.role)) {
+      return NextResponse.json(
+        { error: "Эта роль не работает по сменам." },
+        { status: 403 }
       );
     }
 

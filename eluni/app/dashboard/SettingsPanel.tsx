@@ -9,13 +9,13 @@ export function SettingsPanel() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-6">
       {/* Тема */}
       <section>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-app">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-app">
           {t("settings.theme")}
         </h3>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <ThemeButton
             current={theme}
             value="light"
@@ -35,10 +35,10 @@ export function SettingsPanel() {
 
       {/* Язык */}
       <section>
-        <h3 className="mb-2 text-xs font-medium uppercase tracking-wide text-muted-app">
+        <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-app">
           {t("settings.language")}
         </h3>
-        <div className="grid grid-cols-2 gap-2">
+        <div className="grid grid-cols-2 gap-3">
           <LocaleButton
             current={locale}
             value="ru"
@@ -75,13 +75,13 @@ function ThemeButton({
     <button
       type="button"
       onClick={onClick}
-      className={`flex items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition ${
+      className={`flex min-h-[48px] items-center justify-center gap-2 rounded-xl border px-4 py-3 text-base font-semibold transition ${
         active
           ? "border-transparent bg-accent-app text-white"
           : "border-app bg-surface-2 text-app hover:bg-surface"
       }`}
     >
-      <Icon className="h-4 w-4" />
+      <Icon className="h-5 w-5" />
       {label}
     </button>
   );
@@ -103,7 +103,7 @@ function LocaleButton({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-lg border px-3 py-2 text-sm transition ${
+      className={`flex min-h-[48px] items-center justify-center rounded-xl border px-4 py-3 text-base font-semibold transition ${
         active
           ? "border-transparent bg-accent-app text-white"
           : "border-app bg-surface-2 text-app hover:bg-surface"
