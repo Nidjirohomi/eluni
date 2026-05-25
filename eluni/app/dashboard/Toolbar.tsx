@@ -1,16 +1,16 @@
 "use client";
 
 import {
-  Briefcase,
   ListTodo,
   BarChart3,
   Settings,
   Flame,
-  ShieldCheck,
+  Home,
   User,
+  Globe,
   type LucideIcon,
 } from "lucide-react";
-import { useI18n } from "@/lib/i18n/I18nProvider";
+import { useI18n, type Locale } from "@/lib/i18n/I18nProvider";
 
 export type ToolbarPanel =
   | "my"
@@ -29,6 +29,10 @@ interface Props {
   hideMyCases?: boolean;
 }
 
+/**
+ * Левый узкий sidebar (~64px) — тёмный в обеих темах, как на макете.
+ * Сверху: основные разделы. Внизу: язык, профиль, настройки.
+ */
 export function Toolbar({
   activePanel,
   onSelect,
@@ -36,65 +40,73 @@ export function Toolbar({
   heatmapOn,
   hideMyCases,
 }: Props) {
-  const { t } = useI18n();
+  const { t, locale, setLocale } = useI18n();
 
   const toggle = (p: Exclude<ToolbarPanel, null>) =>
     onSelect(activePanel === p ? null : p);
 
-  return (
-    <aside className="flex h-full w-24 flex-shrink-0 flex-col items-stretch justify-between border-r border-app bg-surface py-4">
-      <div className="flex flex-col items-stretch gap-1.5 px-2">
-        <div
-          className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-accent-app text-white"
-          title="ElUni"
-        >
-          <ShieldCheck className="h-7 w-7" />
-        </div>
+  const cycleLocale = () => {
+    const next: Locale = locale === "ru" ? "kg" : "ru";
+    setLocale(next);
+  };
 
-        {!hideMyCases && (
+  return (
+    <aside className="bg-sidebar border-sidebar relative z-20 flex h-full w-16 flex-shrink-0 flex-col items-center justify-between border-r py-3">
+      {/* Верхняя группа */}
+      <div className="flex w-full flex-col items-center gap-1 px-2">
+        {!hideMyCases ? (
           <ToolbarItem
             active={activePanel === "my"}
             onClick={() => toggle("my")}
-            label={t("toolbar.myCasesShort")}
             title={t("toolbar.myCases")}
-            Icon={Briefcase}
+            Icon={Home}
+          />
+        ) : (
+          <ToolbarItem
+            active={activePanel === "list"}
+            onClick={() => toggle("list")}
+            title={t("toolbar.complaints")}
+            Icon={Home}
           />
         )}
         <ToolbarItem
           active={activePanel === "list"}
           onClick={() => toggle("list")}
-          label={t("toolbar.complaintsShort")}
           title={t("toolbar.complaints")}
           Icon={ListTodo}
         />
         <ToolbarItem
           active={activePanel === "analytics"}
           onClick={() => toggle("analytics")}
-          label={t("toolbar.analyticsShort")}
           title={t("toolbar.analytics")}
           Icon={BarChart3}
         />
         <ToolbarItem
           active={heatmapOn}
           onClick={onToggleHeatmap}
-          label={t("toolbar.heatmapShort")}
           title={t("toolbar.toggleHeatmap")}
           Icon={Flame}
         />
+        <ToolbarItem
+          active={false}
+          onClick={cycleLocale}
+          title={`${t("settings.language")}: ${locale.toUpperCase()}`}
+          Icon={Globe}
+          rightLabel={locale.toUpperCase()}
+        />
       </div>
 
-      <div className="flex flex-col items-stretch gap-1.5 px-2">
+      {/* Нижняя группа */}
+      <div className="flex w-full flex-col items-center gap-1 px-2">
         <ToolbarItem
           active={activePanel === "profile"}
           onClick={() => toggle("profile")}
-          label={t("toolbar.profileShort")}
           title={t("toolbar.profile")}
           Icon={User}
         />
         <ToolbarItem
           active={activePanel === "settings"}
           onClick={() => toggle("settings")}
-          label={t("toolbar.settingsShort")}
           title={t("toolbar.settings")}
           Icon={Settings}
         />
@@ -106,17 +118,17 @@ export function Toolbar({
 function ToolbarItem({
   active,
   onClick,
-  label,
   title,
   Icon,
   disabled,
+  rightLabel,
 }: {
   active: boolean;
   onClick: () => void;
-  label: string;
   title: string;
   Icon: LucideIcon;
   disabled?: boolean;
+  rightLabel?: string;
 }) {
   return (
     <button
@@ -124,14 +136,23 @@ function ToolbarItem({
       onClick={onClick}
       title={title}
       disabled={disabled}
-      className={`flex min-h-[64px] w-full flex-col items-center justify-center gap-1.5 rounded-xl px-1 py-3 transition disabled:opacity-50 ${
+      aria-label={title}
+      className={`relative flex h-11 w-11 items-center justify-center rounded-xl transition disabled:opacity-40 ${
         active
-          ? "bg-accent-app text-white"
-          : "text-app hover:bg-surface-2"
+          ? "bg-sidebar-active text-sidebar-active"
+          : "text-sidebar hover:bg-sidebar-hover hover:text-sidebar-active"
       }`}
     >
-      <Icon className="h-7 w-7" />
-      <span className="text-xs font-medium leading-tight">{label}</span>
+      {/* Активный левый «акцент» как в макете */}
+      {active && (
+        <span className="absolute -left-2 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r-full bg-accent-app" />
+      )}
+      <Icon className="h-5 w-5" />
+      {rightLabel && (
+        <span className="absolute -bottom-0.5 right-0 rounded-sm bg-sidebar-active/30 px-1 text-[9px] font-bold leading-none text-sidebar-active">
+          {rightLabel}
+        </span>
+      )}
     </button>
   );
 }

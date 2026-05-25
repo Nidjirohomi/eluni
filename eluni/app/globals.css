@@ -4,24 +4,50 @@
 
 :root {
   color-scheme: light;
-  --bg: #FAFAF5;
-  --surface: #ffffff;
-  --surface-2: #F2F1EA;
-  --border: #E4E1D7;
+  /* Светлая тема — палитра макета (тёплый бежевый + белые карточки) */
+  --bg: #F5F1E8;
+  --surface: #FFFFFF;
+  --surface-2: #FAF7F0;
+  --border: #E5E1D5;
   --text: #1F2937;
   --text-muted: #6B7280;
-  --accent: #4F46E5;
+  --accent: #2563EB;
+  --accent-soft: rgba(37, 99, 235, 0.12);
+  --topbar-bg: #FFFFFF;
+  --topbar-border: #E5E1D5;
+  /* Sidebar в светлой теме — светлый с тёмными иконками */
+  --sidebar-bg: #FFFFFF;
+  --sidebar-border: #E5E1D5;
+  --sidebar-fg: #6B7280;
+  --sidebar-fg-active: #1F2937;
+  --sidebar-active: rgba(37, 99, 235, 0.12);
+  --sidebar-hover: rgba(0, 0, 0, 0.045);
+  --shadow-card: 0 8px 24px -8px rgba(15, 23, 42, 0.18);
+  --ring: rgba(37, 99, 235, 0.35);
 }
 
 html.dark {
   color-scheme: dark;
-  --bg: #1E1E1E;
-  --surface: #262626;
-  --surface-2: #2E2E2E;
-  --border: #3A3A3A;
-  --text: #E5E5E5;
-  --text-muted: #9CA3AF;
-  --accent: #818CF8;
+  /* Тёмная тема — насыщенная синева как на макете */
+  --bg: #0F141A;
+  --surface: #1A1F2A;
+  --surface-2: #232936;
+  --border: #2A3142;
+  --text: #E8ECF2;
+  --text-muted: #8A95A7;
+  --accent: #3B82F6;
+  --accent-soft: rgba(59, 130, 246, 0.18);
+  --topbar-bg: #131923;
+  --topbar-border: #1F2632;
+  /* Sidebar в тёмной теме — глубокий тёмно-синий */
+  --sidebar-bg: #0A0E14;
+  --sidebar-border: #1F2632;
+  --sidebar-fg: rgba(232, 236, 242, 0.55);
+  --sidebar-fg-active: #FFFFFF;
+  --sidebar-active: rgba(59, 130, 246, 0.22);
+  --sidebar-hover: rgba(255, 255, 255, 0.05);
+  --shadow-card: 0 12px 32px -10px rgba(0, 0, 0, 0.6);
+  --ring: rgba(59, 130, 246, 0.45);
 }
 
 html,
@@ -64,15 +90,38 @@ select {
   background: var(--text-muted);
 }
 
-/* Утилиты-классы, использующие CSS-переменные темы */
-.bg-app { background: var(--bg); }
-.bg-surface { background: var(--surface); }
-.bg-surface-2 { background: var(--surface-2); }
-.text-app { color: var(--text); }
-.text-muted-app { color: var(--text-muted); }
-.border-app { border-color: var(--border); }
-.accent-app { color: var(--accent); }
-.bg-accent-app { background: var(--accent); }
+/* Утилиты-классы, использующие CSS-переменные темы.
+   Оборачиваем в @layer utilities, чтобы Tailwind корректно включил их
+   в порядок слоёв и они не конфликтовали с базовыми/utility-классами. */
+@layer utilities {
+  .bg-app { background-color: var(--bg) !important; }
+  .bg-surface { background-color: var(--surface) !important; }
+  .bg-surface-2 { background-color: var(--surface-2) !important; }
+  .text-app { color: var(--text); }
+  .text-muted-app { color: var(--text-muted); }
+  .border-app { border-color: var(--border) !important; }
+  .accent-app { color: var(--accent); }
+  .bg-accent-app { background-color: var(--accent) !important; }
+  .bg-accent-soft { background-color: var(--accent-soft) !important; }
+
+  /* Top bar */
+  .bg-topbar { background-color: var(--topbar-bg) !important; }
+  .border-topbar { border-color: var(--topbar-border) !important; }
+
+  /* Sidebar — адаптируется под тему (светлый в light, тёмный в dark) */
+  .bg-sidebar { background-color: var(--sidebar-bg) !important; }
+  .border-sidebar { border-color: var(--sidebar-border) !important; }
+  .text-sidebar { color: var(--sidebar-fg); }
+  .text-sidebar-active { color: var(--sidebar-fg-active); }
+  .bg-sidebar-active { background-color: var(--sidebar-active) !important; }
+  .hover\:bg-sidebar-hover:hover { background-color: var(--sidebar-hover) !important; }
+
+  /* Карточка с тенью (правая панель и т.п.) */
+  .shadow-card { box-shadow: var(--shadow-card); }
+
+  /* Фокус-кольцо для inputs/buttons */
+  .ring-app { box-shadow: 0 0 0 3px var(--ring); }
+}
 
 /* Leaflet popup стили под тему */
 html.dark .leaflet-popup-content-wrapper,
@@ -88,4 +137,20 @@ html.dark .leaflet-popup-tip {
 @keyframes drawer-slide {
   from { transform: translateX(-12px); opacity: 0; }
   to   { transform: translateX(0); opacity: 1; }
+}
+
+/* Правый drawer въезжает справа */
+.drawer-enter-right {
+  animation: drawer-slide-right 0.24s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+@keyframes drawer-slide-right {
+  from { transform: translateX(16px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+
+/* Пульсирующая точка маркера (как в макете) */
+@keyframes marker-pulse {
+  0%   { transform: scale(0.9); opacity: 0.7; }
+  50%  { transform: scale(1.4); opacity: 0; }
+  100% { transform: scale(0.9); opacity: 0; }
 }

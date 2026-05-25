@@ -10,11 +10,18 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // светлая тема — молочно-бежевый
-        cream: "#FAFAF5",
-        // тёмная — основной серый
-        slate900: "#1E1E1E",
-        accent: "#4F46E5",
+        // Палитра макета — токены через CSS-переменные (см. app/globals.css).
+        // Эти алиасы оставлены для совместимости с прежними классами.
+        cream: "#F5F1E8",
+        slate900: "#0F141A",
+        accent: "#3B82F6",
+      },
+      boxShadow: {
+        card: "var(--shadow-card)",
+      },
+      borderRadius: {
+        "2xl": "1rem",
+        "3xl": "1.5rem",
       },
     },
   },

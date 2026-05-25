@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   LineChart,
@@ -25,6 +25,7 @@ import {
   Sparkles,
   Clock,
 } from "lucide-react";
+import { useTheme } from "@/lib/theme/ThemeProvider";
 
 interface AnalyticsData {
   org: string;
@@ -66,6 +67,20 @@ export function AnalyticsClient() {
   const [loading, setLoading] = useState(true);
   const [predLoading, setPredLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { theme } = useTheme();
+
+  // Стили графиков — адаптируются под тему.
+  const chartStyles = useMemo(
+    () => ({
+      grid: theme === "dark" ? "#2A3142" : "#E5E1D5",
+      axis: theme === "dark" ? "#8A95A7" : "#6B7280",
+      tooltipBg: theme === "dark" ? "#1A1F2A" : "#FFFFFF",
+      tooltipBorder: theme === "dark" ? "#2A3142" : "#E5E1D5",
+      tooltipText: theme === "dark" ? "#E8ECF2" : "#1F2937",
+      accent: theme === "dark" ? "#3B82F6" : "#2563EB",
+    }),
+    [theme]
+  );
 
   useEffect(() => {
     let cancel = false;
@@ -144,28 +159,33 @@ export function AnalyticsClient() {
         <Card title="Динамика по месяцам">
           <ResponsiveContainer width="100%" height={260}>
             <LineChart data={analytics.monthly}>
-              <CartesianGrid stroke="#1f1f1f" strokeDasharray="3 3" />
+              <CartesianGrid stroke={chartStyles.grid} strokeDasharray="3 3" />
               <XAxis
                 dataKey="month"
-                stroke="#888"
+                stroke={chartStyles.axis}
                 fontSize={12}
                 tickLine={false}
               />
-              <YAxis stroke="#888" fontSize={12} tickLine={false} allowDecimals={false} />
+              <YAxis
+                stroke={chartStyles.axis}
+                fontSize={12}
+                tickLine={false}
+                allowDecimals={false}
+              />
               <Tooltip
                 contentStyle={{
-                  background: "#0d0d0d",
-                  border: "1px solid #262626",
+                  background: chartStyles.tooltipBg,
+                  border: `1px solid ${chartStyles.tooltipBorder}`,
                   borderRadius: 8,
-                  color: "#fff",
+                  color: chartStyles.tooltipText,
                 }}
               />
               <Line
                 type="monotone"
                 dataKey="count"
-                stroke="#6366f1"
+                stroke={chartStyles.accent}
                 strokeWidth={2}
-                dot={{ fill: "#6366f1", r: 4 }}
+                dot={{ fill: chartStyles.accent, r: 4 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
@@ -199,10 +219,10 @@ export function AnalyticsClient() {
                 </Pie>
                 <Tooltip
                   contentStyle={{
-                    background: "#0d0d0d",
-                    border: "1px solid #262626",
+                    background: chartStyles.tooltipBg,
+                    border: `1px solid ${chartStyles.tooltipBorder}`,
                     borderRadius: 8,
-                    color: "#fff",
+                    color: chartStyles.tooltipText,
                   }}
                 />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -219,18 +239,30 @@ export function AnalyticsClient() {
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={analytics.byPriority}>
-                <CartesianGrid stroke="#1f1f1f" strokeDasharray="3 3" />
-                <XAxis dataKey="priority" stroke="#888" fontSize={12} />
-                <YAxis stroke="#888" fontSize={12} allowDecimals={false} />
+                <CartesianGrid stroke={chartStyles.grid} strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="priority"
+                  stroke={chartStyles.axis}
+                  fontSize={12}
+                />
+                <YAxis
+                  stroke={chartStyles.axis}
+                  fontSize={12}
+                  allowDecimals={false}
+                />
                 <Tooltip
                   contentStyle={{
-                    background: "#0d0d0d",
-                    border: "1px solid #262626",
+                    background: chartStyles.tooltipBg,
+                    border: `1px solid ${chartStyles.tooltipBorder}`,
                     borderRadius: 8,
-                    color: "#fff",
+                    color: chartStyles.tooltipText,
                   }}
                 />
-                <Bar dataKey="count" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                <Bar
+                  dataKey="count"
+                  fill={chartStyles.accent}
+                  radius={[6, 6, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -244,15 +276,15 @@ export function AnalyticsClient() {
               {analytics.topDistricts.map((d, idx) => (
                 <li
                   key={d.district}
-                  className="flex items-center justify-between rounded-lg border border-white/5 bg-black/30 px-3 py-2"
+                  className="flex items-center justify-between rounded-lg border border-app bg-surface-2 px-3 py-2"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-indigo-500/20 text-xs font-semibold text-indigo-300">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-accent-soft text-xs font-semibold accent-app">
                       {idx + 1}
                     </span>
-                    <span className="text-zinc-200">{d.district}</span>
+                    <span className="text-app">{d.district}</span>
                   </div>
-                  <span className="text-sm font-medium text-zinc-400">
+                  <span className="text-sm font-medium text-muted-app">
                     {d.count}
                   </span>
                 </li>
@@ -275,16 +307,20 @@ function Stat({
   tone?: "indigo" | "emerald" | "muted";
 }) {
   const tones: Record<string, string> = {
-    indigo: "text-indigo-300",
-    emerald: "text-emerald-300",
-    muted: "text-zinc-300",
+    indigo: "accent-app",
+    emerald: "text-emerald-600 dark:text-emerald-400",
+    muted: "text-app",
   };
   return (
     <div className="rounded-2xl border border-app bg-surface p-5">
-      <div className="text-sm font-medium uppercase tracking-wide text-muted-app">
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-app">
         {label}
       </div>
-      <div className={`mt-1 text-3xl font-semibold ${tone ? tones[tone] : "text-app"}`}>
+      <div
+        className={`mt-1 text-3xl font-semibold ${
+          tone ? tones[tone] : "text-app"
+        }`}
+      >
         {value}
       </div>
     </div>
@@ -346,10 +382,10 @@ function PredictionCard({
         : "Стабильно";
   const trendColor =
     prediction.trend === "rising"
-      ? "text-red-300 bg-red-500/10"
+      ? "text-red-600 dark:text-red-300 bg-red-500/10"
       : prediction.trend === "falling"
-        ? "text-emerald-300 bg-emerald-500/10"
-        : "text-zinc-300 bg-white/5";
+        ? "text-emerald-600 dark:text-emerald-300 bg-emerald-500/10"
+        : "text-app bg-surface-2";
 
   return (
     <div className="rounded-2xl border border-app bg-surface p-6">

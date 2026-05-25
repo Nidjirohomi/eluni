@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   X,
   MapPin,
@@ -16,6 +17,8 @@ import type { ComplaintRow, OnDutyUser } from "./types";
 import { useI18n } from "@/lib/i18n/I18nProvider";
 import { MediaGallery } from "./MediaGallery";
 
+const MiniMap = dynamic(() => import("./Map2GIS"), { ssr: false });
+
 interface Props {
   complaint: ComplaintRow;
   myDisplayName: string;
@@ -27,6 +30,11 @@ interface Props {
    * По умолчанию true для обратной совместимости.
    */
   canAct?: boolean;
+  /**
+   * Встроенный режим (внутри Drawer). Убирает собственные рамку/фон/крестик —
+   * их предоставляет родитель. Используется для правой панели «Инцидент».
+   */
+  embedded?: boolean;
   onClose: () => void;
   onUpdate: (updated: ComplaintRow) => void;
 }
@@ -36,6 +44,7 @@ export function ComplaintCard({
   myDisplayName,
   canManage,
   canAct = true,
+  embedded = false,
   onClose,
   onUpdate,
 }: Props) {
@@ -134,145 +143,228 @@ export function ComplaintCard({
   const isAssignedToMe =
     status === "in_progress" && complaint.assignedUser === myDisplayName;
 
-  return (
-    <div className="pointer-events-auto w-[480px] max-w-[94vw] overflow-hidden rounded-2xl border border-app bg-surface shadow-2xl">
-      <div className="flex items-start justify-between gap-3 border-b border-app px-6 py-5">
-        <div className="flex flex-wrap items-center gap-2 text-sm">
-          <StatusBadge status={status} />
-          <PriorityBadge priority={complaint.priority} />
-          <span className="rounded-md bg-surface-2 px-2.5 py-1 font-semibold text-app">
+  // Содержимое тела карточки (одинаково для embedded и standalone).
+  const body = (
+    <div className="space-y-5">
+      {/* Блок «Инцидент / Категория» — главный заголовок как в макете */}
+      <section>
+        <div className="text-xs font-medium uppercase tracking-wide text-muted-app">
+          {t("topbar.section")}
+        </div>
+        <div className="mt-1 flex items-center gap-2">
+          <h3 className="text-xl font-bold leading-tight text-app">
             {complaint.category}
-          </span>
-          {/* Метка «Анонимно» — жалоба пришла из Telegram без привязки к гражданину. */}
+          </h3>
           {complaint.source === "telegram" && !complaint.userId && (
             <span
-              className="inline-flex items-center gap-1.5 rounded-md bg-zinc-500/15 px-2.5 py-1 text-sm font-semibold text-zinc-600 dark:text-zinc-300"
+              className="inline-flex items-center gap-1 rounded-md bg-zinc-500/15 px-1.5 py-0.5 text-[11px] font-semibold text-muted-app"
               title="Жалоба подана анонимно через Telegram"
             >
-              <EyeOff className="h-4 w-4" />
+              <EyeOff className="h-3 w-3" />
               {t("complaint.anonymous")}
             </span>
           )}
         </div>
+      </section>
+
+      {/* Двухколонная сетка: Статус | Время */}
+      <section className="grid grid-cols-2 gap-3">
+        <InfoBlock label={t("filters.status")}>
+          <div className="flex items-center gap-2">
+            <StatusBadge status={status} />
+          </div>
+        </InfoBlock>
+        <InfoBlock label={t("complaint.time")}>
+          <div className="flex items-center gap-1.5 text-sm font-semibold text-app">
+            <Clock className="h-3.5 w-3.5 text-muted-app" />
+            {new Date(complaint.createdAt).toLocaleTimeString("ru-RU", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </div>
+        </InfoBlock>
+        <InfoBlock label={t("priority.label")}>
+          <PriorityBadge priority={complaint.priority} />
+        </InfoBlock>
+        <InfoBlock label={t("complaint.assignee")}>
+          <div className="truncate text-sm font-semibold text-app">
+            {complaint.assignedUser ?? t("complaint.noAssignee")}
+          </div>
+        </InfoBlock>
+      </section>
+
+      {/* Текст обращения */}
+      <section>
+        <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-app">
+          {t("complaint.officialText")}
+        </div>
+        <p className="text-sm leading-relaxed text-app">
+          {complaint.officialText}
+        </p>
+      </section>
+
+      {/* Адрес */}
+      {complaint.address && (
+        <section className="flex items-start gap-2 text-sm text-muted-app">
+          <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <span className="leading-snug">{complaint.address}</span>
+        </section>
+      )}
+
+      {/* Мини-карта (если есть координаты) */}
+      {complaint.lat != null && complaint.lng != null && (
+        <section>
+          <div className="mb-1.5 text-xs font-medium uppercase tracking-wide text-muted-app">
+            {t("complaint.map")}
+          </div>
+          <div className="overflow-hidden rounded-xl border border-app">
+            <MiniMap
+              points={[
+                {
+                  id: complaint.id,
+                  lat: complaint.lat,
+                  lng: complaint.lng,
+                  color: "#F97316",
+                },
+              ]}
+              center={{ lat: complaint.lat, lng: complaint.lng }}
+              zoom={15}
+              height="160px"
+            />
+          </div>
+        </section>
+      )}
+
+      {/* Прикреплённые медиа */}
+      <MediaGallery media={complaint.mediaUrls} title={t("complaint.media")} />
+
+      {/* ID */}
+      <div className="font-mono text-[11px] text-muted-app">
+        ID: {complaint.id}
+      </div>
+
+      {/* Ошибка */}
+      {error && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-500">
+          <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          {error}
+        </div>
+      )}
+
+      {/* Действия */}
+      {canAct && (
+        <div className="flex flex-wrap items-center gap-2">
+          {status === "pending" && (
+            <button
+              type="button"
+              onClick={take}
+              disabled={pending}
+              className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-accent-app px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+            >
+              <Wrench className="h-4 w-4" />
+              {t("complaint.takeInWork")}
+            </button>
+          )}
+          {isAssignedToMe && (
+            <button
+              type="button"
+              onClick={close}
+              disabled={pending}
+              className="inline-flex min-h-[44px] flex-1 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              {t("complaint.close")}
+            </button>
+          )}
+          {pending && (
+            <Loader2 className="h-5 w-5 animate-spin text-muted-app" />
+          )}
+        </div>
+      )}
+
+      {!canAct && (
+        <div className="rounded-lg border border-app bg-surface-2 px-3 py-2 text-xs text-muted-app">
+          {t("complaint.readOnlyHint")}
+        </div>
+      )}
+
+      {/* Назначение для начальника */}
+      {canAct && canManage && status !== "resolved" && (
+        <div className="rounded-xl border border-app bg-surface-2 p-3">
+          <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-app">
+            <UserPlus className="h-4 w-4" />
+            {t("complaint.assignTo")}
+          </div>
+          {loadingOnDuty ? (
+            <div className="text-xs text-muted-app">{t("common.loading")}</div>
+          ) : onDuty.length === 0 ? (
+            <div className="text-xs text-muted-app">{t("common.noData")}</div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <select
+                value={assignTarget}
+                onChange={(e) => setAssignTarget(e.target.value)}
+                className="min-h-[40px] rounded-lg border border-app bg-surface px-3 py-2 text-sm text-app"
+              >
+                <option value="">— {t("common.all")} —</option>
+                {onDuty.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.displayName} ({u.username})
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={assign}
+                disabled={!assignTarget || pending}
+                className="inline-flex min-h-[40px] items-center justify-center gap-2 rounded-lg bg-accent-app px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:opacity-50"
+              >
+                {t("complaint.assign")}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  // Embedded режим — без рамки/фона/крестика (их даёт Drawer).
+  if (embedded) return body;
+
+  // Standalone — старый формат (на случай использования вне Drawer).
+  return (
+    <div className="pointer-events-auto w-[420px] max-w-[94vw] overflow-hidden rounded-2xl border border-app bg-surface shadow-card">
+      <div className="flex items-center justify-between gap-3 border-b border-app px-5 py-3">
+        <div className="text-base font-semibold text-app">
+          {t("topbar.section")}
+        </div>
         <button
           type="button"
           onClick={onClose}
-          className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-app transition hover:bg-surface-2"
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-app transition hover:bg-surface-2"
           aria-label="Close"
         >
-          <X className="h-5 w-5" />
+          <X className="h-4 w-4" />
         </button>
       </div>
+      <div className="px-5 py-4">{body}</div>
+    </div>
+  );
+}
 
-      <div className="space-y-4 px-6 py-5">
-        <p className="text-base leading-relaxed text-app">
-          {complaint.officialText}
-        </p>
-        {complaint.address && (
-          <div className="flex items-center gap-2 text-sm text-muted-app">
-            <MapPin className="h-4 w-4" />
-            {complaint.address}
-          </div>
-        )}
-        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-app">
-          <span className="flex items-center gap-1.5">
-            <Clock className="h-4 w-4" />
-            {new Date(complaint.createdAt).toLocaleString("ru-RU")}
-          </span>
-          <span>
-            {t("complaint.assignee")}:{" "}
-            <span className="font-medium text-app">
-              {complaint.assignedUser ?? t("complaint.noAssignee")}
-            </span>
-          </span>
-        </div>
-        <div className="font-mono text-xs text-muted-app">
-          ID: {complaint.id}
-        </div>
-
-        {/* Прикреплённые фото/видео */}
-        <MediaGallery media={complaint.mediaUrls} title={t("complaint.media")} />
-
-        {error && (
-          <div className="flex items-start gap-2 rounded-lg border border-red-500/40 bg-red-500/10 px-4 py-3 text-sm text-red-500">
-            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0" />
-            {error}
-          </div>
-        )}
-
-        {canAct && (
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            {status === "pending" && (
-              <button
-                type="button"
-                onClick={take}
-                disabled={pending}
-                className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-accent-app px-5 py-3 text-base font-semibold text-white transition hover:opacity-90 disabled:opacity-50 sm:min-h-[44px]"
-              >
-                <Wrench className="h-5 w-5" />
-                {t("complaint.takeInWork")}
-              </button>
-            )}
-            {isAssignedToMe && (
-              <button
-                type="button"
-                onClick={close}
-                disabled={pending}
-                className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-base font-semibold text-white transition hover:bg-emerald-500 disabled:opacity-50 sm:min-h-[44px]"
-              >
-                <CheckCircle2 className="h-5 w-5" />
-                {t("complaint.close")}
-              </button>
-            )}
-            {pending && (
-              <Loader2 className="h-5 w-5 animate-spin text-muted-app" />
-            )}
-          </div>
-        )}
-
-        {!canAct && (
-          <div className="rounded-lg border border-app bg-surface-2 px-4 py-3 text-sm text-muted-app">
-            {t("complaint.readOnlyHint")}
-          </div>
-        )}
-
-        {canAct && canManage && status !== "resolved" && (
-          <div className="rounded-xl border border-app bg-surface-2 p-4">
-            <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-app">
-              <UserPlus className="h-5 w-5" />
-              {t("complaint.assignTo")}
-            </div>
-            {loadingOnDuty ? (
-              <div className="text-sm text-muted-app">{t("common.loading")}</div>
-            ) : onDuty.length === 0 ? (
-              <div className="text-sm text-muted-app">{t("common.noData")}</div>
-            ) : (
-              <div className="flex flex-wrap items-center gap-2">
-                <select
-                  value={assignTarget}
-                  onChange={(e) => setAssignTarget(e.target.value)}
-                  className="min-h-[48px] flex-1 rounded-lg border border-app bg-surface px-3 py-2 text-sm text-app sm:min-h-[44px]"
-                >
-                  <option value="">— {t("common.all")} —</option>
-                  {onDuty.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.displayName} ({u.username})
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={assign}
-                  disabled={!assignTarget || pending}
-                  className="inline-flex min-h-[48px] items-center gap-2 rounded-xl bg-accent-app px-5 py-3 text-base font-semibold text-white transition hover:opacity-90 disabled:opacity-50 sm:min-h-[44px]"
-                >
-                  {t("complaint.assign")}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
+function InfoBlock({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-app bg-surface-2 px-3 py-2.5">
+      <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-app">
+        {label}
       </div>
+      {children}
     </div>
   );
 }

@@ -21,29 +21,31 @@ export function MyCasesPanel({ items, onPick }: Props) {
   }
 
   return (
-    <ul className="space-y-2.5">
+    <ul className="space-y-2">
       {items.map((c) => (
         <li key={c.id}>
           <button
             type="button"
             onClick={() => onPick(c)}
-            className="w-full rounded-xl border border-app bg-surface-2 p-4 text-left transition hover:bg-surface"
+            className="w-full rounded-xl border border-app bg-surface-2 p-3 text-left transition hover:border-[var(--accent)] hover:bg-surface"
           >
-            <div className="mb-2 flex items-center gap-2 text-xs">
-              <span className="rounded-md bg-indigo-500/15 px-2 py-0.5 text-xs font-semibold text-indigo-600 dark:text-indigo-300">
+            <div className="mb-1.5 flex flex-wrap items-center gap-1.5 text-xs">
+              <span className="rounded-md bg-accent-soft px-1.5 py-0.5 text-[11px] font-semibold accent-app">
                 {c.category}
               </span>
               <PriorityChip priority={c.priority} />
-              <span className="ml-auto text-sm text-muted-app">
-                <Clock className="mr-1.5 inline h-4 w-4" />
-                {new Date(c.createdAt).toLocaleString("ru-RU")}
+              <span className="ml-auto text-[11px] text-muted-app">
+                <Clock className="mr-1 inline h-3 w-3" />
+                {new Date(c.createdAt).toLocaleDateString("ru-RU")}
               </span>
             </div>
-            <div className="line-clamp-2 text-base leading-snug text-app">{c.officialText}</div>
+            <div className="line-clamp-2 text-sm leading-snug text-app">
+              {c.officialText}
+            </div>
             {c.address && (
-              <div className="mt-2 flex items-center gap-1.5 text-sm text-muted-app">
-                <MapPin className="h-4 w-4" />
-                {c.address}
+              <div className="mt-1.5 flex items-center gap-1 text-xs text-muted-app">
+                <MapPin className="h-3 w-3 flex-shrink-0" />
+                <span className="truncate">{c.address}</span>
               </div>
             )}
           </button>

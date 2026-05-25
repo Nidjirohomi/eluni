@@ -102,17 +102,22 @@ interface Props {
 const ACCENT = "#6366f1";
 
 function svgMarker(color: string, badge?: string): string {
-  const ringSize = badge ? 44 : 32;
+  // Маркер как в макете: внешнее мягкое кольцо + насыщенный кружок + белая обводка.
+  const size = badge ? 44 : 28;
+  const center = size / 2;
+  const outerR = center - 2;
+  const innerR = badge ? center - 8 : center - 8;
   const inner = badge
-    ? `<text x="${ringSize / 2}" y="${
-        ringSize / 2 + 5
-      }" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">${escapeText(
+    ? `<text x="${center}" y="${
+        center + 5
+      }" text-anchor="middle" font-size="14" font-weight="700" fill="#fff">${escapeText(
         badge
       )}</text>`
     : "";
   return `
-<svg xmlns="http://www.w3.org/2000/svg" width="${ringSize}" height="${ringSize}" viewBox="0 0 ${ringSize} ${ringSize}">
-  <circle cx="${ringSize / 2}" cy="${ringSize / 2}" r="${ringSize / 2 - 2}" fill="${color}" stroke="rgba(0,0,0,0.55)" stroke-width="2"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <circle cx="${center}" cy="${center}" r="${outerR}" fill="${color}" fill-opacity="0.18"/>
+  <circle cx="${center}" cy="${center}" r="${innerR}" fill="${color}" stroke="#ffffff" stroke-width="2"/>
   ${inner}
 </svg>`.trim();
 }
@@ -227,7 +232,7 @@ export default function Map2GIS({
       if (!mapRef.current) return;
       for (const p of pts) {
         const svg = svgMarker(p.color ?? ACCENT, p.badge);
-        const size = p.badge ? 44 : 32;
+        const size = p.badge ? 44 : 28;
         const marker = new mapgl.Marker(map, {
           coordinates: [p.lng, p.lat],
           icon: toDataUri(svg),
@@ -272,7 +277,7 @@ export default function Map2GIS({
       style={{
         width: "100%",
         height,
-        background: theme === "dark" ? "#1E1E1E" : "#FAFAF5",
+        background: theme === "dark" ? "#0F141A" : "#F5F1E8",
       }}
     />
   );

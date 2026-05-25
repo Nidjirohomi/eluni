@@ -146,13 +146,13 @@ export default function ComplaintsMap2GIS({
 
       {popup && popup.lat != null && popup.lng != null && (
         <div
-          className="pointer-events-auto absolute left-1/2 top-4 z-[1000] w-[320px] max-w-[92vw] -translate-x-1/2 rounded-xl border border-app bg-surface/95 p-4 shadow-2xl backdrop-blur"
+          className="pointer-events-auto absolute left-1/2 top-4 z-[1000] w-[300px] max-w-[92vw] -translate-x-1/2 rounded-xl border border-app bg-surface/95 p-3 shadow-card backdrop-blur"
         >
-          <div className="mb-2 flex flex-wrap items-center gap-2 text-xs">
-            <span
-              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-semibold"
+          <div className="mb-2 flex items-start gap-2">
+            <div
+              className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg"
               style={{
-                background: `${colorByStatus(popup)}20`,
+                background: `${colorByStatus(popup)}22`,
                 color: colorByStatus(popup),
               }}
             >
@@ -160,39 +160,41 @@ export default function ComplaintsMap2GIS({
                 className="inline-block h-2 w-2 rounded-full"
                 style={{ background: colorByStatus(popup) }}
               />
-              {STATUS_LABELS_RU[popup.status] ?? popup.status}
-            </span>
-            <span className="rounded-md bg-indigo-500/15 px-2 py-0.5 font-semibold text-indigo-600 dark:text-indigo-300">
-              {popup.category}
-            </span>
-            <span className="rounded-md bg-red-500/15 px-2 py-0.5 font-semibold text-red-500">
-              {popup.priority}
-            </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-sm font-semibold text-app">
+                {popup.category}
+              </div>
+              <div className="text-[11px] text-muted-app">
+                {STATUS_LABELS_RU[popup.status] ?? popup.status} ·{" "}
+                {popup.priority}
+              </div>
+            </div>
             <button
               type="button"
               onClick={() => {
                 setPopup(null);
                 onPopupClose?.();
               }}
-              className="ml-auto text-muted-app hover:text-app"
+              className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-md text-muted-app transition hover:bg-surface-2 hover:text-app"
               aria-label="Закрыть"
             >
               ✕
             </button>
           </div>
 
-          <div className="mb-3 line-clamp-3 text-sm text-app">
+          <div className="mb-2.5 line-clamp-2 text-xs leading-snug text-app">
             {popup.officialText}
           </div>
 
-          <div className="flex items-center justify-between gap-2 text-xs">
-            <span className="text-muted-app">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] text-muted-app">
               {formatTimeShort(popup.createdAt)}
             </span>
             <button
               type="button"
               onClick={() => onPopupDetails?.(popup)}
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-accent-app px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+              className="inline-flex min-h-[36px] items-center gap-2 rounded-lg bg-accent-app px-3 py-1.5 text-xs font-semibold text-white transition hover:opacity-90"
             >
               {popupDetailsLabel}
             </button>
